@@ -5373,7 +5373,6 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
 	unsigned long pages_reclaimed = 0;
 	int retry_loop_count = 0;
 	u64 stime = 0;
-	pg_data_t *pgdat = ac->preferred_zoneref->zone->zone_pgdat;
 	bool woke_kswapd = false;
 	bool woke_kshrinkd = false;
 	bool used_vmpressure = false;
