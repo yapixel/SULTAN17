@@ -85,15 +85,9 @@ patch -p1 < 10_enable_susfs_for_ksu.patch
 
 echo "Patching utf8"
 cd $KERNEL_REPO
-cp ~/utf8.patch $KERNEL_REPO/
 patch -p1 < utf8.patch
 
-echo "fixing Sultan rejects (fs/open.c and kernel/sys.c"
-cp ~/fixer.patch $KERNEL_REPO/
+echo "fixing Sultan rejects (fs/open.c, fs/namespace.c and kernel/sys.c"
 patch -p1 < fixer.patch
-
-echo "fixing namespace.c rejects"
-cp ~/namespacefix.patch $KERNEL_REPO/
-patch -p1 < namespacefix.patch
 
 echo "done!"
