@@ -1,0 +1,60 @@
+From 76e2c380b5d3e3f028b487a453f120265593f8e4 Mon Sep 17 00:00:00 2001
+From: brokestar233 <3765589194@qq.com>
+Date: Sat, 13 Dec 2025 15:52:25 +0800
+Subject: [PATCH] unicode: treat empty decomposition as CCC STOPPER to prevent
+ bypass
+
+Zero-width space (U+200B and similar) have empty decomposition in NFC/NFD.
+Previously they were treated as CCC=0, allowing them to bypass composition
+checks and potentially defeat security restrictions that rely on normalized
+UTF-8 comparison.
+
+Treat empty decomposition as a combining class stopper and only advance the
+cursor when the decomposition is non-empty.
+
+Link: https://t.me/xiaotong_channel/72
+Change-Id: I834c876175e4af5fcd2784d1a5f918c44c7f53c9
+Signed-off-by: brokestar233 <3765589194@qq.com>
+---
+ fs/unicode/utf8-norm.c | 26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
+
+diff --git a/fs/unicode/utf8-norm.c b/fs/unicode/utf8-norm.c
+index 768f8ab448b8f..7d19000effd85 100644
+--- a/fs/unicode/utf8-norm.c
++++ b/fs/unicode/utf8-norm.c
+@@ -513,21 +513,21 @@ int utf8byte(struct utf8cursor *u8c)
+ 		    u8c->um->ntab[u8c->n]->maxage) {
+ 			ccc = STOPPER;
+ 		} else if (ccc == DECOMPOSE) {
+-			u8c->len -= utf8clen(u8c->s);
+-			u8c->p = u8c->s + utf8clen(u8c->s);
+-			u8c->s = LEAF_STR(leaf);
+-			/* Empty decomposition implies CCC 0. */
+-			if (*u8c->s == '\0') {
+-				if (u8c->ccc == STOPPER)
+-					continue;
++			// 检查分解结果是否为空 (例如零宽空格)
++			if (*LEAF_STR(leaf) == '\0') {
+ 				ccc = STOPPER;
+-				goto ccc_mismatch;
++			} else {
++				// 只有在确认了是正常的需要分解的字符时，才执行指针移动和状态修改
++				u8c->len -= utf8clen(u8c->s);
++				u8c->p = u8c->s + utf8clen(u8c->s);
++				u8c->s = LEAF_STR(leaf);
++
++				// 进行下一级查找
++				leaf = utf8lookup(u8c->um, u8c->n, u8c->hangul, u8c->s);
++				if (!leaf)
++					return -1;
++				ccc = LEAF_CCC(leaf);
+ 			}
+-
+-			leaf = utf8lookup(u8c->um, u8c->n, u8c->hangul, u8c->s);
+-			if (!leaf)
+-				return -1;
+-			ccc = LEAF_CCC(leaf);
+ 		}
+ 
+ 		/*
