@@ -162,7 +162,6 @@ elif [ "${LOCALVERSION+set}" != "set" ]; then
 	# If the variable LOCALVERSION is set (including being set
 	# to an empty string), we don't want to append a plus sign.
 	scm=$(scm_version --short)
-	res="$res${scm:++}"
 fi
 
 # finally, add the abXXX number if BUILD_NUMBER is set
@@ -170,5 +169,4 @@ if test -n "${BUILD_NUMBER}"; then
 	res="$res-ab${BUILD_NUMBER}"
 fi
 
-#echo "$res"
-echo "-android14-11-g752d9c17787d-ab15574904"
+echo "$res"
