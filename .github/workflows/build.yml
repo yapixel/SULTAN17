@@ -15,17 +15,31 @@ on:
           - all
 
 jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+
+    steps:
+      - name: Set build matrix
+        id: set-matrix
+        run: |
+          if [ "${{ inputs.target }}" = "all" ]; then
+            echo 'matrix=["gs201","zuma","zumapro"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'matrix=["${{ inputs.target }}"]' >> "$GITHUB_OUTPUT"
+          fi
+
   build:
+    needs: prepare
+
+    runs-on: ubuntu-24.04
+
     strategy:
       fail-fast: false
       matrix:
-        target: ${{ fromJson(
-          inputs.target == 'all'
-            && '["gs201","zuma","zumapro"]'
-            || format('["{0}"]', inputs.target)
-        ) }}
-
-    runs-on: ubuntu-24.04
+        target: ${{ fromJson(needs.prepare.outputs.matrix) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -53,7 +67,7 @@ jobs:
       - name: Make scripts executable
         run: |
           chmod +x patch_sultan.sh
-          chmod +x build.sh
+          chmod +x build_sultan.sh
 
       - name: Patch kernel
         run: |
@@ -61,7 +75,7 @@ jobs:
 
       - name: Build kernel
         run: |
-          ./build.sh ${{ matrix.target }}
+          ./build_sultan.sh ${{ matrix.target }}
 
       - name: Upload ZIP
         uses: actions/upload-artifact@v4
