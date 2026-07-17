@@ -1,20 +1,57 @@
 name: Build Kernel
 
 on:
-  push:
-    branches:
-      - sultan-17
-
   workflow_dispatch:
+    inputs:
+      target:
+        description: "Device target"
+        required: true
+        type: choice
+        options:
+          - gs201
+          - zuma
+          - zumapro
 
 jobs:
   build:
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Show environment
+      - name: Install dependencies
         run: |
-          uname -a
-          gcc --version
+          sudo apt-get update
+          sudo apt-get install -y \
+            bc \
+            bison \
+            flex \
+            libssl-dev \
+            libelf-dev \
+            cpio \
+            zip \
+            unzip \
+            curl \
+            git
+
+      - name: Make scripts executable
+        run: |
+          chmod +x patch_sultan.sh
+          chmod +x build.sh
+
+      - name: Patch kernel
+        shell: bash
+        run: |
+          ./patch_sultan.sh ${{ inputs.target }}
+
+      - name: Build kernel
+        shell: bash
+        run: |
+          ./build.sh ${{ inputs.target }}
+
+      - name: Upload ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: SULTAN17_KSU_${{ inputs.target }}
+          path: dist/*.zip
