@@ -55,25 +55,23 @@ esac
 make \
     CROSS_COMPILE="$TOOLCPATH/aarch64-linux-" \
     CC="$TOOLCPATH/aarch64-linux-gcc" \
-    -j"$(nproc --all)" \
+    -j"$(nproc)" \
     "${TARGET}_defconfig"
 
 make \
     CROSS_COMPILE="$TOOLCPATH/aarch64-linux-" \
     CC="$TOOLCPATH/aarch64-linux-gcc" \
-    -j"$(nproc --all)"
-if [ ! -d $KERNEL_ROOT/AnyKernel ]; then
-	echo "Cloning AnyKernel"
-	git clone https://github.com/Ante0/AnyKernel3 -b sultan-17-caimito $KERNEL_ROOT/AnyKernel
-		if [ -f $KERNEL_ROOT/AnyKernel/Image.lz4 ] || [ -f $KERNEL_ROOT/AnyKernel/dtb ]; then
-    		echo "Removing old Image.lz4 and dtb from AnyKernel"
-    		rm -f $KERNEL_ROOT/AnyKernel/Image.lz4 AnyKernel/dtb
-	fi
+    -j"$(nproc)"
+
+if [ -f $KERNEL_ROOT/AnyKernel/Image.lz4 ] || [ -f $KERNEL_ROOT/AnyKernel/dtb ]; then
+    	echo "Removing old Image.lz4 and dtb from AnyKernel"
+    	rm -f $KERNEL_ROOT/AnyKernel/Image.lz4 AnyKernel/dtb
 fi
 
+
 if [ -f "$KERNEL_ROOT/out/arch/arm64/boot/Image.lz4" ]; then
-	cp $KERNEL_ROOT/out/arch/arm64/boot/Image.lz4 $KERNEL_ROOT/AnyKernel/Image.lz4
-	cat $KERNEL_ROOT/out/google-devices/"$TARGET"/dts/*.dtb > $KERNEL_ROOT/AnyKernel/dtb
+	cp "$KERNEL_ROOT/out/arch/arm64/boot/Image.lz4" "$KERNEL_ROOT/AnyKernel/Image.lz4"
+	cat "$KERNEL_ROOT"/out/google-devices/"$TARGET"/dts/*.dtb > "$KERNEL_ROOT/AnyKernel/dtb"
 
 	cd $KERNEL_ROOT/AnyKernel
 
