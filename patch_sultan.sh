@@ -78,7 +78,7 @@ echo "CONFIG_COMPAT=y" >> "$KERNEL_REPO/arch/arm64/configs/${TARGET}_defconfig"
 fi
 
 ##CLONE KERNELSU AND SUSFS##
-if [ ! -d "$KERNEL_REPO/KernelSU" ]; then
+if [ ! -d "$KERNEL_REPO"/KernelSU ]; then
 cd "$KERNEL_REPO"
 #fetch ksu
 curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
@@ -87,7 +87,7 @@ echo "KernelSU directory already exists. Delete and run script again to clone"
 fi
 
 ##fetch anykernel
-if [ ! -d "$KERNEL_REPO/AnyKernel" ]; then
+if [ ! -d "$KERNEL_REPO"/AnyKernel ]; then
 cd $KERNEL_REPO
 git clone --depth=1 https://github.com/Ante0/AnyKernel3 -b sultan-17-caimito AnyKernel
 else
@@ -95,7 +95,7 @@ echo "AnyKernel directory already exists. Delete and run script again to clone"
 fi
 
 #fetch susfs
-if [ ! -d "$KERNEL_REPO/susfs4ksu" ]; then
+if [ ! -d "$KERNEL_REPO"/susfs4ksu ]; then
 cd $KERNEL_REPO
 git clone https://gitlab.com/simonpunk/susfs4ksu -b gki-android14-6.1 --depth=1
 #copy files
@@ -111,10 +111,12 @@ cp "$KERNEL_REPO"/susfs4ksu/kernel_patches/fs/* "$KERNEL_REPO"/fs/
 cp "$KERNEL_REPO"/susfs4ksu/kernel_patches/include/linux/* "$KERNEL_REPO"/include/linux/
 
 ##PATCHING##
+echo "Patching kernel"
 cd "$KERNEL_REPO"
 patch -p1 < 50_add_susfs_in_gki-android14-6.1.patch
 
-cd "$KERNEL_REPO/KernelSU/"
+echo "Patching KernelSU"
+cd "$KERNEL_REPO"/KernelSU/
 patch -p1 < 10_enable_susfs_for_ksu.patch
 
 echo "Patching utf8"
