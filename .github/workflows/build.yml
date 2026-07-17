@@ -19,13 +19,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [gs201, zuma, zumapro]
-
-    # Only run all three if "all" was selected,
-    # otherwise only run the matching matrix job.
-    if: |
-      inputs.target == 'all' ||
-      matrix.target == inputs.target
+        target: ${{ fromJson(
+          inputs.target == 'all'
+            && '["gs201","zuma","zumapro"]'
+            || format('["{0}"]', inputs.target)
+        ) }}
 
     runs-on: ubuntu-24.04
 
