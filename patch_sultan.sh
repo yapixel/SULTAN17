@@ -35,6 +35,7 @@ case "$1" in
         ;;
     *)
         echo "Error: '$1' is not a valid target."
+	echo "This will select the correct defconfig"
         echo "Valid targets are: gs201, zuma, zumapro"
         exit 1
         ;;
