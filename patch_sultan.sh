@@ -113,18 +113,18 @@ cp "$KERNEL_REPO"/susfs4ksu/kernel_patches/include/linux/* "$KERNEL_REPO"/includ
 ##PATCHING##
 echo "Patching kernel"
 cd "$KERNEL_REPO"
-patch -p1 < 50_add_susfs_in_gki-android14-6.1.patch
+patch -p1 < 50_add_susfs_in_gki-android14-6.1.patch || true
 
 echo "Patching KernelSU"
 cd "$KERNEL_REPO"/KernelSU/
-patch -p1 < 10_enable_susfs_for_ksu.patch
+patch -p1 < 10_enable_susfs_for_ksu.patch || true
 
 echo "Patching utf8"
 cd "$KERNEL_REPO"
-patch -p1 < utf8.patch
+patch -p1 < utf8.patch || true
 
 echo "fixing Sultan rejects (fs/open.c, fs/namespace.c and kernel/sys.c"
 cd "$KERNEL_REPO"
-patch -p1 < fixer.patch
+patch -p1 < fixer.patch || true
 
 echo "done!"
