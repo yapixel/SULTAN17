@@ -113,11 +113,15 @@ cp "$KERNEL_REPO"/susfs4ksu/kernel_patches/include/linux/* "$KERNEL_REPO"/includ
 ##PATCHING##
 echo "Patching kernel"
 cd "$KERNEL_REPO"
-patch -p1 < 50_add_susfs_in_gki-android14-6.1.patch || true
+if ! patch -p1 < 50_add_susfs_in_gki-android14-6.1.patch; then
+echo "Some SUSFS hunks failed (expected). Continuing..."
+fi
 
 echo "Patching KernelSU"
 cd "$KERNEL_REPO"/KernelSU/
-patch -p1 < 10_enable_susfs_for_ksu.patch || true
+if ! patch -p1 < 10_enable_susfs_for_ksu.patch; then
+echo "Some SUSFS hunks failed (expected). Continuing..."
+fi
 
 echo "Patching utf8"
 cd "$KERNEL_REPO"
