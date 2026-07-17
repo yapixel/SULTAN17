@@ -73,16 +73,6 @@ if [ -f "$KERNEL_ROOT/out/arch/arm64/boot/Image.lz4" ]; then
 	cp "$KERNEL_ROOT/out/arch/arm64/boot/Image.lz4" "$KERNEL_ROOT/AnyKernel/Image.lz4"
 	cat "$KERNEL_ROOT"/out/google-devices/"$TARGET"/dts/*.dtb > "$KERNEL_ROOT/AnyKernel/dtb"
 
-	cd $KERNEL_ROOT/AnyKernel
-
-	#get current date and time for zip naming
-	current_date_time=$(date +%Y%m%d%H%M%S)
-
-		if [ ! -d $KERNEL_ROOT/dist ]; then
-		mkdir -p $KERNEL_ROOT/dist
-		fi
-
-	zip -0 -r "$KERNEL_ROOT/dist/SULTAN17_KSU_${TARGET}_${current_date_time}.zip" *
 	else
 	echo "BUILD FAILED or INTERRUPTED"
 fi

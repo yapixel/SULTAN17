@@ -81,4 +81,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: SULTAN17_KSU_${{ matrix.target }}
-          path: dist/*.zip
+          path: AnyKernel/
+          compression-level: 0
