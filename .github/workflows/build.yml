@@ -1,4 +1,5 @@
 name: Build Kernel
+run-name: Build ${{ inputs.target }}
 
 on:
   workflow_dispatch:
@@ -11,14 +12,25 @@ on:
           - gs201
           - zuma
           - zumapro
+          - all
 
 jobs:
   build:
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [gs201, zuma, zumapro]
+
+    # Only run all three if "all" was selected,
+    # otherwise only run the matching matrix job.
+    if: |
+      inputs.target == 'all' ||
+      matrix.target == inputs.target
+
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
@@ -33,7 +45,12 @@ jobs:
             zip \
             unzip \
             curl \
-            git
+            git \
+            patch
+
+      - name: Configure Git
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Make scripts executable
         run: |
@@ -41,17 +58,15 @@ jobs:
           chmod +x build.sh
 
       - name: Patch kernel
-        shell: bash
         run: |
-          ./patch_sultan.sh ${{ inputs.target }}
+          ./patch_sultan.sh ${{ matrix.target }}
 
       - name: Build kernel
-        shell: bash
         run: |
-          ./build.sh ${{ inputs.target }}
+          ./build.sh ${{ matrix.target }}
 
       - name: Upload ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: SULTAN17_KSU_${{ inputs.target }}
+          name: SULTAN17_KSU_${{ matrix.target }}
           path: dist/*.zip
