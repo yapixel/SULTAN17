@@ -14,6 +14,16 @@ on:
           - zumapro
           - all
 
+      variant:
+        description: "Root variant"
+        required: true
+        type: choice
+        options:
+          - ksu
+          - ksu-next
+          - ksu-susfs
+          - ksu-next-susfs
+          - all
 jobs:
   prepare:
     runs-on: ubuntu-24.04
@@ -26,10 +36,15 @@ jobs:
         id: set-matrix
         run: |
           if [ "${{ inputs.target }}" = "all" ]; then
-            echo 'matrix=["gs201","zuma","zumapro"]' >> "$GITHUB_OUTPUT"
+              echo 'targets=["gs201","zuma","zumapro"]' >> "$GITHUB_OUTPUT"
           else
-            echo 'matrix=["${{ inputs.target }}"]' >> "$GITHUB_OUTPUT"
+              echo 'targets=["${{ inputs.target }}"]' >> "$GITHUB_OUTPUT"
           fi
+
+          if [ "${{ inputs.variant }}" = "all" ]; then
+              echo 'variants=["ksu","ksu-susfs","ksu-next","ksu-next-susfs"]' >> "$GITHUB_OUTPUT"
+          else
+              echo 'variants=["${{ inputs.variant }}"]' >> "$GITHUB_OUTPUT"
 
   build:
     needs: prepare
@@ -39,7 +54,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ${{ fromJson(needs.prepare.outputs.matrix) }}
+        target: ${{ fromJson(needs.prepare.outputs.targets) }}
+        variant: ${{ fromJson(needs.prepare.outputs.variants) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -71,7 +87,7 @@ jobs:
 
       - name: Patch kernel
         run: |
-          ./patch_sultan.sh ${{ matrix.target }}
+          ./patch_sultan.sh ${{ matrix.target }} ${{ matrix.variant }}
 
       - name: Build kernel
         run: |
@@ -80,6 +96,6 @@ jobs:
       - name: Upload ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: SULTAN17_KSU_${{ matrix.target }}
+          name: SULTAN17_KSU_${{ matrix.target }}_${{ matrix.variant }}
           path: AnyKernel/
           compression-level: 0
