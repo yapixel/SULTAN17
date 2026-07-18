@@ -45,6 +45,7 @@ jobs:
               echo 'variants=["ksu","ksu-susfs","ksu-next","ksu-next-susfs"]' >> "$GITHUB_OUTPUT"
           else
               echo 'variants=["${{ inputs.variant }}"]' >> "$GITHUB_OUTPUT"
+          fi
 
   build:
     needs: prepare
