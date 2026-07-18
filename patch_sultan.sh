@@ -24,7 +24,7 @@ get_script_dir()
     echo "$SCRIPT_DIR"
 }
 
-if [ $# -ne 1 ]; then
+if [ $# -ne 2 ]; then
     echo "Usage: $0 <gs201|zuma|zumapro> <stock|ksu|ksu-susfs|ksu-next|ksu-next-susfs"
     exit 1
 fi
@@ -188,16 +188,19 @@ if [[ "$VARIANT" != "stock" ]]; then
 #SUS_SU
         if [[ "$VARIANT" == *"-susfs" ]]; then
                 if ! grep -q "^CONFIG_KSU_SUSFS_SUS_SU=n$" "$DEFCONFIG"; then
-                        echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "DEFCONFIG"
+                        echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$DEFCONFIG"
                 fi
-                if ! grep -q "^CONFIG_KSU_SUSFS=y$"; then
+                if ! grep -q "^CONFIG_KSU_SUSFS=y$" "$DEFCONFIG"; then
                         echo "CONFIG_KSU_SUSFS=y" >> "$DEFCONFIG"
                 fi
+	fi
+fi
+
 #FOR ALL VARIANTS
 if ! grep -q "^CONFIG_COMPAT=y$" "$DEFCONFIG"; then
         echo "CONFIG_COMPAT=y" >> "$DEFCONFIG"
 fi
-fi
+
 
 ##fetch anykernel
 cd "$KERNEL_REPO"
