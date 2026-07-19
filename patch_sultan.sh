@@ -68,6 +68,9 @@ case "$VARIANT" in
 	#fetch ksu
 	curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
 
+    #Scope min manual hooks
+	patch -p1 < "$KERNEL_REPO"/kernel_patches/next/scope_min_manual_hooks_v1.6.patch
+
 	echo "Patching utf8"
 	cd "$KERNEL_REPO"
 	patch -p1 < "$KERNEL_REPO"/kernel_patches/common/unicode_bypass_fix_6.1+.patch || true
