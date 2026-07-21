@@ -50,7 +50,7 @@ if ! gh release view Nightly >/dev/null 2>&1; then
 
     gh release create Nightly \
         --title "Nightly" \
-        --notes "Automated nightly kernel builds."
+        --notes "$RELEASE_NOTES"
 
 fi
 

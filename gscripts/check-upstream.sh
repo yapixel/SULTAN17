@@ -9,12 +9,31 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/config.sh"
 
 ###############################################################################
-# Upstream repositories
-###############################################################################
-
-###############################################################################
 # Helpers
 ###############################################################################
+
+github_commit_info() {
+    local repo="$1"
+    local branch="$2"
+
+    repo="$(repo_path "$repo")"
+
+    gh api \
+        "repos/${repo}/commits/${branch}" \
+        --jq '[.sha, (.commit.message | split("\n")[0])] | @tsv'
+}
+
+gitlab_commit_info() {
+    local repo="$1"
+    local branch="$2"
+
+    repo="$(repo_path "$repo")"
+    repo="${repo//\//%2F}"
+
+    curl -fsSL \
+        "https://gitlab.com/api/v4/projects/${repo}/repository/branches/${branch}" |
+        jq -r '[.commit.id, .commit.title] | @tsv'
+}
 
 repo_path() {
     local repo="$1"
@@ -78,9 +97,14 @@ fi
 # Current SHAs
 ###############################################################################
 
-NEW_KSU="$(github_sha "$KSU_REPO" "$KSU_BRANCH")"
-NEW_NEXT="$(github_sha "$KSU_NEXT_REPO" "$KSU_NEXT_BRANCH")"
-NEW_SUSFS="$(gitlab_sha "$SUSFS_REPO" "$SUSFS_BRANCH")"
+IFS=$'\t' read -r NEW_KSU KSU_MSG \
+    < <(github_commit_info "$KSU_REPO" "$KSU_BRANCH")
+
+IFS=$'\t' read -r NEW_NEXT NEXT_MSG \
+    < <(github_commit_info "$KSU_NEXT_REPO" "$KSU_NEXT_BRANCH")
+
+IFS=$'\t' read -r NEW_SUSFS SUSFS_MSG \
+    < <(gitlab_commit_info "$SUSFS_REPO" "$SUSFS_BRANCH")
 
 ###############################################################################
 # First run
@@ -107,14 +131,38 @@ else
 
     if [[ "${OLD_KSU}" != "${NEW_KSU}" ]]; then
         BUILD_VARIANTS+=(ksu ksu-susfs)
+
+	SHORT_SHA="${NEW_KSU:0:7}"
+	COMMIT_MSG="$(github_commit_subject "$KSU_REPO" "$KSU_BRANCH")"
+
+	RELEASE_NOTES+="### KernelSU
+	- ${SHORT_SHA} - ${COMMIT_MSG}
+
+	"
     fi
 
     if [[ "${OLD_NEXT}" != "${NEW_NEXT}" ]]; then
         BUILD_VARIANTS+=(ksu-next ksu-next-susfs)
+
+	SHORT_SHA="${NEW_NEXT:0:7}"
+	COMMIT_MSG="$(github_commit_subject "$KSU_NEXT_REPO" "$KSU_NEXT_BRANCH")"
+
+	RELEASE_NOTES+="### KernelSU-Next
+	- ${SHORT_SHA} - ${COMMIT_MSG}
+
+	"
     fi
 
     if [[ "${OLD_SUSFS}" != "${NEW_SUSFS}" ]]; then
         BUILD_VARIANTS+=(ksu-susfs ksu-next-susfs)
+
+	SHORT_SHA="${NEW_SUSFS:0:7}"
+	COMMIT_MSG="$(gitlab_commit_subject "$SUSFS_REPO" "$SUSFS_BRANCH")"
+
+	RELEASE_NOTES+="### SUSFS
+	- ${SHORT_SHA} - ${COMMIT_MSG}
+
+	"
     fi
 
 if ((${#BUILD_VARIANTS[@]} > 0)); then
@@ -130,6 +178,19 @@ if ((${#BUILD_VARIANTS[@]} == 0)); then
 else
     msg "Detected changes for: ${BUILD_VARIANTS[*]}"
 fi
+
+###############################################################################
+# RELEASE NOTES
+###############################################################################
+
+NOTES_FILE="$(mktemp)"
+
+cat >"$NOTES_FILE" <<EOF
+## Automated Nightly Build
+
+This build was triggered by upstream changes.
+
+EOF
 
 ###############################################################################
 # Generate matrix
@@ -167,6 +228,9 @@ fi
     echo "ksu_sha=$NEW_KSU"
     echo "next_sha=$NEW_NEXT"
     echo "susfs_sha=$NEW_SUSFS"
+    echo "release_notes<<EOF"
+    echo "$NOTES_FILE"
+    echo "EOF"
 } >> "$GITHUB_OUTPUT"
 
 msg "Generated matrix"
