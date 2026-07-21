@@ -133,36 +133,39 @@ else
         BUILD_VARIANTS+=(ksu ksu-susfs)
 
 	SHORT_SHA="${NEW_KSU:0:7}"
-	COMMIT_MSG="$(github_commit_subject "$KSU_REPO" "$KSU_BRANCH")"
 
-	RELEASE_NOTES+="### KernelSU
-	- ${SHORT_SHA} - ${COMMIT_MSG}
+	cat >>"$NOTES_FILE" <<EOF
+	### KernelSU
 
-	"
+	- ${SHORT_SHA} — ${KSU_MSG}
+
+	EOF
     fi
 
     if [[ "${OLD_NEXT}" != "${NEW_NEXT}" ]]; then
         BUILD_VARIANTS+=(ksu-next ksu-next-susfs)
 
 	SHORT_SHA="${NEW_NEXT:0:7}"
-	COMMIT_MSG="$(github_commit_subject "$KSU_NEXT_REPO" "$KSU_NEXT_BRANCH")"
 
-	RELEASE_NOTES+="### KernelSU-Next
-	- ${SHORT_SHA} - ${COMMIT_MSG}
+	cat >>"$NOTES_FILE" <<EOF
+	### KernelSU-Next
 
-	"
+	- ${SHORT_SHA} — ${NEXT_MSG}
+
+	EOF
     fi
 
     if [[ "${OLD_SUSFS}" != "${NEW_SUSFS}" ]]; then
         BUILD_VARIANTS+=(ksu-susfs ksu-next-susfs)
 
 	SHORT_SHA="${NEW_SUSFS:0:7}"
-	COMMIT_MSG="$(gitlab_commit_subject "$SUSFS_REPO" "$SUSFS_BRANCH")"
 
-	RELEASE_NOTES+="### SUSFS
-	- ${SHORT_SHA} - ${COMMIT_MSG}
+	cat >>"$NOTES_FILE" <<EOF
+	### SusFS
 
-	"
+	- ${SHORT_SHA} — ${SUSFS_MSG}
+
+	EOF
     fi
 
 if ((${#BUILD_VARIANTS[@]} > 0)); then
@@ -228,8 +231,9 @@ fi
     echo "ksu_sha=$NEW_KSU"
     echo "next_sha=$NEW_NEXT"
     echo "susfs_sha=$NEW_SUSFS"
+
     echo "release_notes<<EOF"
-    echo "$NOTES_FILE"
+    cat "$NOTES_FILE"
     echo "EOF"
 } >> "$GITHUB_OUTPUT"
 
