@@ -1,103 +1,84 @@
 name: Build Kernel
-run-name: Build ${{ inputs.target }}
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       target:
-        description: "Device target"
         required: true
-        type: choice
-        options:
-          - gs201
-          - zuma
-          - zumapro
-          - all
+        type: string
 
       variant:
-        description: "Root variant"
         required: true
-        type: choice
-        options:
-          - ksu
-          - ksu-next
-          - ksu-susfs
-          - ksu-next-susfs
-          - all
+        type: string
+
 jobs:
-  prepare:
-    runs-on: ubuntu-24.04
-
-    outputs:
-      targets: ${{ steps.set-matrix.outputs.targets }}
-      variants: ${{ steps.set-matrix.outputs.variants }}
-
-    steps:
-      - name: Set build matrix
-        id: set-matrix
-        run: |
-          if [ "${{ inputs.target }}" = "all" ]; then
-              echo 'targets=["gs201","zuma","zumapro"]' >> "$GITHUB_OUTPUT"
-          else
-              echo 'targets=["${{ inputs.target }}"]' >> "$GITHUB_OUTPUT"
-          fi
-
-          if [ "${{ inputs.variant }}" = "all" ]; then
-              echo 'variants=["ksu","ksu-susfs","ksu-next","ksu-next-susfs"]' >> "$GITHUB_OUTPUT"
-          else
-              echo 'variants=["${{ inputs.variant }}"]' >> "$GITHUB_OUTPUT"
-          fi
-
   build:
-    needs: prepare
+    name: "${{ inputs.target }} • ${{ inputs.variant }}"
+    runs-on: ubuntu-latest
 
-    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
 
-    strategy:
-      fail-fast: false
-      matrix:
-        target: ${{ fromJson(needs.prepare.outputs.targets) }}
-        variant: ${{ fromJson(needs.prepare.outputs.variants) }}
+    env:
+      TARGET: ${{ inputs.target }}
+      VARIANT: ${{ inputs.variant }}
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install dependencies
         run: |
           sudo apt-get update
+
           sudo apt-get install -y \
             bc \
             bison \
-            flex \
-            libssl-dev \
-            libelf-dev \
-            cpio \
-            zip \
-            unzip \
+            build-essential \
+            ccache \
             curl \
+            flex \
             git \
-            patch
+            gh \
+            jq \
+            libelf-dev \
+            libssl-dev \
+            lz4 \
+            pahole \
+            python3 \
+            rsync \
+            unzip \
+            zip
 
-      - name: Configure Git
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Restore ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ runner.os }}-${{ inputs.target }}
+          restore-keys: |
+            ccache-${{ runner.os }}-${{ inputs.target }}
+            ccache-${{ runner.os }}
 
-      - name: Make scripts executable
-        run: |
-          chmod +x patch_sultan.sh
-          chmod +x build_sultan.sh
+      - name: Prepare scripts
+        run: chmod +x scripts/*.sh
 
-      - name: Patch kernel
+      - name: Patch source tree
         run: |
-          ./patch_sultan.sh ${{ matrix.target }} ${{ matrix.variant }}
+          ./scripts/patch_sultan.sh "$TARGET" "$VARIANT"
 
       - name: Build kernel
         run: |
-          ./build_sultan.sh ${{ matrix.target }}
+          ./scripts/build.sh "$TARGET"
 
-      - name: Upload ZIP
+      - name: Package AnyKernel
+        run: |
+          ./scripts/package.sh "$TARGET" "$VARIANT"
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SULTAN17_KSU_${{ matrix.target }}_${{ matrix.variant }}
-          path: AnyKernel/
+          name: SULTAN17_${{ inputs.target }}_${{ inputs.variant }}
+          path: dist/*.zip
+          if-no-files-found: error
           compression-level: 0
