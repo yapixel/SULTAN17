@@ -65,11 +65,11 @@ jobs:
 
       - name: Patch source tree
         run: |
-          ./scripts/patch_sultan.sh "$TARGET" "$VARIANT"
+          ./gscripts/patch_sultan.sh "$TARGET" "$VARIANT"
 
       - name: Build kernel
         run: |
-          ./scripts/build.sh "$TARGET"
+          ./gscripts/build_sultan.sh "$TARGET"
 
       - name: Package AnyKernel
         run: |

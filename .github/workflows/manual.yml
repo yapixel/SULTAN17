@@ -52,7 +52,6 @@ jobs:
 
           if [[ "$VARIANT" == "all" ]]; then
               VARIANTS=(
-                  stock
                   ksu
                   ksu-susfs
                   ksu-next

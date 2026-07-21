@@ -31,7 +31,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./scripts/check-upstream.sh
+          ./gscripts/check-upstream.sh
 
   build:
     needs: check
@@ -81,7 +81,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./scripts/release-nightly.sh \
+          ./gscripts/release-nightly.sh \
             "${{ needs.check.outputs.ksu_sha }}" \
             "${{ needs.check.outputs.next_sha }}" \
             "${{ needs.check.outputs.susfs_sha }}"
