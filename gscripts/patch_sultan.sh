@@ -2,27 +2,10 @@
 
 set -e
 
-get_script_dir()
-{
-    local SOURCE_PATH="${BASH_SOURCE[0]}"
-    local SYMLINK_DIR
-    local SCRIPT_DIR
-    # Resolve symlinks recursively
-    while [ -L "$SOURCE_PATH" ]; do
-        # Get symlink directory
-        SYMLINK_DIR="$( cd -P "$( dirname "$SOURCE_PATH" )" >/dev/null 2>&1 && pwd )"
-        # Resolve symlink target (relative or absolute)
-        SOURCE_PATH="$(readlink "$SOURCE_PATH")"
-        # Check if candidate path is relative or absolute
-        if [[ $SOURCE_PATH != /* ]]; then
-            # Candidate path is relative, resolve to full path
-            SOURCE_PATH=$SYMLINK_DIR/$SOURCE_PATH
-        fi
-    done
-    # Get final script directory path from fully resolved source path
-    SCRIPT_DIR="$(cd -P "$( dirname "$SOURCE_PATH" )" >/dev/null 2>&1 && pwd)"
-    echo "$SCRIPT_DIR"
-}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# shellcheck source=config.sh
+source "${SCRIPT_DIR}/config.sh"
 
 if [ $# -ne 2 ]; then
     echo "Usage: $0 <gs201|zuma|zumapro> <stock|ksu|ksu-susfs|ksu-next|ksu-next-susfs"
@@ -52,7 +35,7 @@ case "$2" in
         ;;
 esac
 
-export KERNEL_REPO="$(get_script_dir)"
+readonly KERNEL_REPO="${REPO_ROOT}"
 
 cd "$KERNEL_REPO"
 
