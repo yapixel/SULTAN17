@@ -4,13 +4,22 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+######################################################
 # shellcheck source=config.sh
+######################################################
 source "${SCRIPT_DIR}/config.sh"
 
 if [ $# -ne 2 ]; then
     echo "Usage: $0 <gs201|zuma|zumapro> <stock|ksu|ksu-susfs|ksu-next|ksu-next-susfs"
     exit 1
 fi
+
+######################################################
+
+
+######################################################
+#SWITCHES
+######################################################
 
 case "$1" in
     gs201|zuma|zumapro)
@@ -35,128 +44,200 @@ case "$2" in
         ;;
 esac
 
-readonly KERNEL_REPO="${REPO_ROOT}"
+######################################################
 
-cd "$KERNEL_REPO"
+######################################################
+# VARIABLES
+######################################################
+
+readonly KERNEL_REPO="${REPO_ROOT}"
+readonly PATCHES_REPO="https://github.com/Ante0/kernel_patches"
+
+######################################################
+
+######################################################
+# HELPERS
+######################################################
+
+clone_anykernel() {
+	msg "Cloning AnyKernel"
+
+	git clone \
+		--depth=1 \
+		-b "${ANYKERNEL_BRANCH_PREFIX}-${TARGET}" \
+		"${ANYKERNEL_REPO}" \
+		AnyKernel
+}
+
+clone_kernel_patches() {
+	msg "Cloning kernel patches"
+
+	git clone \
+		--depth=1 \
+		"${PATCHES_REPO}" \
+		kernel_patches
+}
+
+clone_susfs() {
+	msg "Cloning SUSFS"
+
+	git clone \
+		--depth=1 \
+		-b "${SUSFS_BRANCH}" \
+		"${SUSFS_REPO}"
+}
+
+install_ksu() {
+	msg "Cloning KernelSU"
+
+	curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
+}
+
+install_ksu_next() {
+	msg "Cloning KernelSU-Next"
+
+	curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s dev
+}
+
+patch_utf8() {
+	msg "Patching UTF8"
+
+	patch -p1 < "$KERNEL_REPO"/kernel_patches/common/unicode_bypass_fix_6.1+.patch || true
+}
+
+patch_scopemin() {
+	msg "Patching Scope Min 1.6"
+
+	patch -p1 < "$KERNEL_REPO"/kernel_patches/next/scope_min_manual_hooks_v1.6.patch || true
+}
+
+apply_patch() {
+	local dir="$1"
+	local patchfile="$2"
+
+	patch -d "$dir" -p1 < "$patchfile"
+}
+
+apply_patch_optional() {
+	local dir="$1"
+	local patchfile="$2"
+
+	if ! apply_patch "$dir" "$patchfile"; then
+		warn "Patch $(basename "$patchfile") applied with rejects (continuing)."
+	fi
+}
+
+##COPY SUSFS only used in functions
+copy_susfs() {
+        cp "$KERNEL_REPO"/susfs4ksu/kernel_patches/fs/* "$KERNEL_REPO"/fs/
+        cp "$KERNEL_REPO"/susfs4ksu/kernel_patches/include/linux/* "$KERNEL_REPO"/include/linux/
+}
+##
+
+patch_susfs_ksu() {
+	msg "Copying susfs libs"
+	copy_susfs
+	msg "Applying SUSFS kernel patch"
+	apply_patch_optional \
+		"$KERNEL_REPO" \
+		"$KERNEL_REPO/susfs4ksu/kernel_patches/50_add_susfs_in_gki-android14-6.1.patch"
+
+	msg "Applying SUSFS KernelSU patch"
+	apply_patch_optional \
+		"$KERNEL_REPO/KernelSU" \
+		"$KERNEL_REPO/susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch"
+}
+
+patch_susfs_ksu_next() {
+	msg "Copying sufs libs"
+	copy_susfs
+
+	msg "Applying SUSFS KernelSU-Next integration"
+
+	apply_patch_optional \
+		"$KERNEL_REPO/KernelSU-Next" \
+		"$KERNEL_REPO/susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch"
+
+	apply_patch_optional \
+                "$KERNEL_REPO/KernelSU-Next" \
+                "$KERNEL_REPO/susfs4ksu/kernel_patches/KernelSU/50_enable_susfs_for_ksu.patch"
+
+	msg "Applying KernelSU-Next compatibility fixes"
+
+	apply_patch_optional \
+		"$KERNEL_REPO/KernelSU-Next" \
+		"$KERNEL_REPO/kernel_patches/next/susfs_fix_patches/v2.2.0/fix_Kbuild.patch"
+
+	apply_patch_optional \
+		"$KERNEL_REPO/KernelSU-Next" \
+		"$KERNEL_REPO/kernel_patches/next/susfs_fix_patches/v2.2.0/fix_init.c.patch"
+
+	apply_patch_optional \
+                "$KERNEL_REPO/KernelSU-Next" \
+                "$KERNEL_REPO/kernel_patches/next/susfs_fix_patches/v2.2.0/fix_kernel_umount.c.patch"
+
+        apply_patch_optional \
+                "$KERNEL_REPO/KernelSU-Next" \
+        	"$KERNEL_REPO/kernel_patches/next/susfs_fix_patches/v2.2.0/fix_setuid_hook.c.patch"
+
+        apply_patch_optional \
+                "$KERNEL_REPO/KernelSU-Next" \
+                "$KERNEL_REPO/kernel_patches/next/susfs_fix_patches/v2.2.0/fix_sucompat.c.patch"
+
+        apply_patch_optional \
+                "$KERNEL_REPO/KernelSU-Next" \
+                "$KERNEL_REPO/kernel_patches/next/susfs_fix_patches/v2.2.0/fix_supercall.c.patch"
+
+        apply_patch_optional \
+                "$KERNEL_REPO/KernelSU-Next" \
+                "$KERNEL_REPO/kernel_patches/next/susfs_fix_patches/v2.2.0/ksu_toolkit.patch"
+
+        apply_patch_optional \
+                "$KERNEL_REPO/KernelSU-Next" \
+                "$KERNEL_REPO/kernel_patches/next/susfs_fix_patches/v2.2.0/overwrite_hook_mode.patch"
+}
+
+patch_sultan() {
+	msg "Applying Sultan specific patches (fs/open.c, fs/namespace.c and kernel/sys.c)"
+	apply_patch_optional \
+		"$KERNEL_REPO" \
+		"$KERNEL_REPO/kernel_patches/sultan/fixer.patch"
+}
+
+######################################################
 
 #clone kernel_patches
-git clone https://github.com/Ante0/kernel_patches --depth=1
+clone_kernel_patches
 
 case "$VARIANT" in
     stock)
         ;;
     ksu)
-        # KernelSU only
-	cd "$KERNEL_REPO"
-	#fetch ksu
-	curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
-
-    #Scope min manual hooks
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/next/scope_min_manual_hooks_v1.6.patch
-
-	echo "Patching utf8"
-	cd "$KERNEL_REPO"
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/common/unicode_bypass_fix_6.1+.patch || true
-
-	echo "$TARGET $VARIANT done"
+        install_ksu
+	patch_scopemin
+	patch_utf8
+	msg "$TARGET $VARIANT done"
         ;;
     ksu-susfs)
-        # KernelSU
-        # SUSFS
-	##CLONE KERNELSU AND SUSFS##
-	cd "$KERNEL_REPO"
-	#fetch ksu
-	curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
-
-	#fetch susfs
-	cd "$KERNEL_REPO"
-	git clone https://gitlab.com/simonpunk/susfs4ksu -b gki-android14-6.1 --depth=1
-
-	cd "$KERNEL_REPO/"
-
-	cp "$KERNEL_REPO"/susfs4ksu/kernel_patches/fs/* "$KERNEL_REPO"/fs/
-	cp "$KERNEL_REPO"/susfs4ksu/kernel_patches/include/linux/* "$KERNEL_REPO"/include/linux/
-
-	##PATCHING##
-	echo "Patching kernel"
-	cd "$KERNEL_REPO"
-	if ! patch -p1 < "$KERNEL_REPO"/susfs4ksu/kernel_patches/50_add_susfs_in_gki-android14-6.1.patch; then
-		echo "Some SUSFS hunks failed (expected). Continuing..."
-	fi
-	echo "Patching KernelSU"
-	cd "$KERNEL_REPO"/KernelSU/
-	if ! patch -p1 < "$KERNEL_REPO"/susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch; then
-		echo "Some SUSFS hunks failed (expected). Continuing..."
-	fi
-
-	echo "Patching utf8"
-	cd "$KERNEL_REPO"
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/common/unicode_bypass_fix_6.1+.patch || true
-
-	echo "fixing Sultan rejects (fs/open.c, fs/namespace.c and kernel/sys.c"
-	cd "$KERNEL_REPO"
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/sultan/fixer.patch || true
-
-	echo "$TARGET $VARIANT done"
+	install_ksu
+	clone_susfs
+	patch_utf8
+	patch_susfs_ksu
+	patch_sultan
+	msg "$TARGET $VARIANT done"
         ;;
     ksu-next)
-        # KernelSU Next
-        cd "$KERNEL_REPO"
-        curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s dev
-
-	#Scope min manual hooks
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/next/scope_min_manual_hooks_v1.6.patch
-
-	#utf8 patch
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/common/unicode_bypass_fix_6.1+.patch || true
-
+        install_ksu_next
+	patch_scopemin
+	patch_uft8
 	echo "$TARGET $VARIANT done"
         ;;
     ksu-next-susfs)
-        # KernelSU Next
-	cd "$KERNEL_REPO"
-	curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s dev
-
-	# SUSFS
-	#fetch susfs
-	git clone https://gitlab.com/simonpunk/susfs4ksu -b gki-android14-6.1 --depth=1
-
-	cp "$KERNEL_REPO"/susfs4ksu/kernel_patches/fs/* "$KERNEL_REPO"/fs/
-	cp "$KERNEL_REPO"/susfs4ksu/kernel_patches/include/linux/* "$KERNEL_REPO"/include/linux/
-
-	##PATCHING##
-	echo "Patching kernel"
-
-	if ! patch -p1 < "$KERNEL_REPO"/susfs4ksu/kernel_patches/50_add_susfs_in_gki-android14-6.1.patch; then
-		echo "Some SUSFS hunks failed (expected). Continuing..."
-	fi
-
-	echo "Patching KernelSU"
-	cd "$KERNEL_REPO"/KernelSU-Next/
-	if ! patch -p1 < "$KERNEL_REPO"/susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch; then
-		echo "Some SUSFS hunks failed (expected). Continuing..."
-	fi
-
-	echo "Patching utf8"
-	cd "$KERNEL_REPO"
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/common/unicode_bypass_fix_6.1+.patch || true
-
-	echo "fixing KSU-Next-specific patches using Wildjames fix repo."
-	cd "$KERNEL_REPO"/KernelSU-Next/
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/next/susfs_fix_patches/v2.2.0/fix_Kbuild.patch || true
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/next/susfs_fix_patches/v2.2.0/fix_init.c.patch || true
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/next/susfs_fix_patches/v2.2.0/fix_kernel_umount.c.patch || true
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/next/susfs_fix_patches/v2.2.0/fix_setuid_hook.c.patch || true
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/next/susfs_fix_patches/v2.2.0/fix_sucompat.c.patch || true
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/next/susfs_fix_patches/v2.2.0/fix_supercall.c.patch || true
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/next/susfs_fix_patches/v2.2.0/ksu_toolkit.patch || true
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/next/susfs_fix_patches/v2.2.0/overwrite_hook_mode.patch || true
-
-
-	echo "fixing Sultan rejects (fs/open.c, fs/namespace.c and kernel/sys.c"
-	cd "$KERNEL_REPO"
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/sultan/fixer.patch || true
-
+	install_ksu_next
+	clone_susfs
+	patch_utf8
+	patch_susfs_ksu_next
+	patch_sultan
 	echo "$TARGET $VARIANT done"
         ;;
 esac
@@ -182,12 +263,6 @@ if [[ "$VARIANT" != "stock" ]]; then
 	fi
 fi
 
-#FOR ALL VARIANTS
-if ! grep -q "^CONFIG_COMPAT=y$" "$DEFCONFIG"; then
-        echo "CONFIG_COMPAT=y" >> "$DEFCONFIG"
-fi
-
-
 ##fetch anykernel
 cd "$KERNEL_REPO"
-git clone --depth=1 https://github.com/Ante0/AnyKernel3 -b sultan-17-caimito AnyKernel
+clone_anykernel
