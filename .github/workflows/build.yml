@@ -69,7 +69,7 @@ jobs:
 
       - name: Build kernel
         run: |
-          ./gscripts/build_sultan.sh "$TARGET"
+          ./gscripts/build.sh "$TARGET"
 
       - name: Package AnyKernel
         run: |
