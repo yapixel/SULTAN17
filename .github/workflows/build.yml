@@ -73,7 +73,7 @@ jobs:
 
       - name: Package AnyKernel
         run: |
-          ./scripts/package.sh "$TARGET" "$VARIANT"
+          ./gscripts/package.sh "$TARGET" "$VARIANT"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
