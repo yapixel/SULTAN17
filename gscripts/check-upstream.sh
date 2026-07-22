@@ -45,30 +45,19 @@ repo_path() {
     printf '%s\n' "$repo"
 }
 
-github_sha() {
-    local repo
-    repo="$(repo_path "$1")"
-
-    gh api \
-        "repos/${repo}/commits/$2" \
-        --jq '.sha'
-}
-
-gitlab_sha() {
-    local repo
-    repo="$(repo_path "$1")"
-    repo="${repo//\//%2F}"
-
-    curl -fsSL \
-        "https://gitlab.com/api/v4/projects/${repo}/repository/branches/$2" \
-        | jq -r '.commit.id'
-}
-
 ###############################################################################
 # Read previous nightly.json
 ###############################################################################
 
 TMP="$(mktemp -d)"
+
+cat >"$NOTES_FILE" <<EOF
+## Automated Nightly Build
+
+This build was triggered by upstream changes.
+
+EOF
+
 JSON_FILE="${TMP}/nightly.json"
 
 LOCAL_JSON="${SCRIPT_DIR}/nightly.json"
@@ -134,12 +123,12 @@ else
 
 	SHORT_SHA="${NEW_KSU:0:7}"
 
-	cat >>"$NOTES_FILE" <<EOF
-	### KernelSU
+cat >>"$NOTES_FILE" <<EOF
+### KernelSU
 
-	- ${SHORT_SHA} — ${KSU_MSG}
+- ${SHORT_SHA} — ${KSU_MSG}
 
-	EOF
+EOF
     fi
 
     if [[ "${OLD_NEXT}" != "${NEW_NEXT}" ]]; then
@@ -147,12 +136,12 @@ else
 
 	SHORT_SHA="${NEW_NEXT:0:7}"
 
-	cat >>"$NOTES_FILE" <<EOF
-	### KernelSU-Next
+cat >>"$NOTES_FILE" <<EOF
+### KernelSU-Next
 
-	- ${SHORT_SHA} — ${NEXT_MSG}
+- ${SHORT_SHA} — ${NEXT_MSG}
 
-	EOF
+EOF
     fi
 
     if [[ "${OLD_SUSFS}" != "${NEW_SUSFS}" ]]; then
@@ -160,12 +149,12 @@ else
 
 	SHORT_SHA="${NEW_SUSFS:0:7}"
 
-	cat >>"$NOTES_FILE" <<EOF
-	### SusFS
+cat >>"$NOTES_FILE" <<EOF
+### SusFS
 
-	- ${SHORT_SHA} — ${SUSFS_MSG}
+- ${SHORT_SHA} — ${SUSFS_MSG}
 
-	EOF
+EOF
     fi
 
 if ((${#BUILD_VARIANTS[@]} > 0)); then
@@ -181,19 +170,6 @@ if ((${#BUILD_VARIANTS[@]} == 0)); then
 else
     msg "Detected changes for: ${BUILD_VARIANTS[*]}"
 fi
-
-###############################################################################
-# RELEASE NOTES
-###############################################################################
-
-NOTES_FILE="$(mktemp)"
-
-cat >"$NOTES_FILE" <<EOF
-## Automated Nightly Build
-
-This build was triggered by upstream changes.
-
-EOF
 
 ###############################################################################
 # Generate matrix
