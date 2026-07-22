@@ -50,6 +50,7 @@ repo_path() {
 ###############################################################################
 
 TMP="$(mktemp -d)"
+NOTES_FILE="${TMP}/release_notes.md"
 
 cat >"$NOTES_FILE" <<EOF
 ## Automated Nightly Build
