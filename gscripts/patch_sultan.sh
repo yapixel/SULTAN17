@@ -154,9 +154,9 @@ patch_susfs_ksu_next() {
 
 	msg "Applying SUSFS KernelSU-Next integration"
 
-        apply_patch_optional \
-                "$KERNEL_REPO/KernelSU-Next" \
-                "$KERNEL_REPO/susfs4ksu/kernel_patches/KernelSU/50_add_susfs_in_gki-android14-6.1.patch"
+    apply_patch_optional \
+        "$KERNEL_REPO/KernelSU-Next" \
+        "$KERNEL_REPO/susfs4ksu/kernel_patches/50_add_susfs_in_gki-android14-6.1.patch"
 
 	apply_patch_optional \
 		"$KERNEL_REPO/KernelSU-Next" \
