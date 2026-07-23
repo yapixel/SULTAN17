@@ -15,12 +15,16 @@ source "${SCRIPT_DIR}/config.sh"
 github_commit_info() {
     local repo="$1"
     local branch="$2"
+    local path="${3:-}"
 
     repo="$(repo_path "$repo")"
 
     gh api \
-        "repos/${repo}/commits/${branch}" \
-        --jq '[.sha, (.commit.message | split("\n")[0])] | @tsv'
+        "repos/${repo}/commits" \
+        -f sha="$branch" \
+        -f path="$path" \
+        -f per_page=1 \
+        --jq '.[0] | [.sha, (.commit.message | split("\n")[0])] | @tsv'
 }
 
 gitlab_commit_info() {
@@ -88,10 +92,10 @@ fi
 ###############################################################################
 
 IFS=$'\t' read -r NEW_KSU KSU_MSG \
-    < <(github_commit_info "$KSU_REPO" "$KSU_BRANCH")
+    < <(github_commit_info "$KSU_REPO" "$KSU_BRANCH" "kernel")
 
 IFS=$'\t' read -r NEW_NEXT NEXT_MSG \
-    < <(github_commit_info "$KSU_NEXT_REPO" "$KSU_NEXT_BRANCH")
+    < <(github_commit_info "$KSU_NEXT_REPO" "$KSU_NEXT_BRANCH" "kernel")
 
 IFS=$'\t' read -r NEW_SUSFS SUSFS_MSG \
     < <(gitlab_commit_info "$SUSFS_REPO" "$SUSFS_BRANCH")
