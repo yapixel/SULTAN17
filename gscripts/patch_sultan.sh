@@ -229,7 +229,7 @@ case "$VARIANT" in
     ksu-next)
         install_ksu_next
 	patch_scopemin
-	patch_uft8
+	patch_utf8
 	echo "$TARGET $VARIANT done"
         ;;
     ksu-next-susfs)
