@@ -20,11 +20,7 @@ github_commit_info() {
     repo="$(repo_path "$repo")"
 
     gh api \
-	    --method GET \
-        "repos/${repo}/commits" \
-        -f sha="$branch" \
-        -f path="$path" \
-        -f per_page=1 \
+        "repos/${repo}/commits?sha=${branch}&path=${path}&per_page=1" \
         --jq '.[0] | [.sha, (.commit.message | split("\n")[0])] | @tsv'
 }
 
