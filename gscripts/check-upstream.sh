@@ -20,6 +20,7 @@ github_commit_info() {
     repo="$(repo_path "$repo")"
 
     gh api \
+	    --method GET \
         "repos/${repo}/commits" \
         -f sha="$branch" \
         -f path="$path" \
