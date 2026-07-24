@@ -88,6 +88,10 @@ fi
 # Current SHAs
 ###############################################################################
 
+RESULT="$(github_commit_info "$KSU_REPO" "$KSU_BRANCH" "kernel")"
+
+printf 'RESULT=%q\n' "$RESULT"
+
 IFS=$'\t' read -r NEW_KSU KSU_MSG \
     < <(github_commit_info "$KSU_REPO" "$KSU_BRANCH" "kernel")
 
