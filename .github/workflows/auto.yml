@@ -87,4 +87,5 @@ jobs:
             "${{ needs.check.outputs.source_sha }}" \
             "${{ needs.check.outputs.ksu_sha }}" \
             "${{ needs.check.outputs.next_sha }}" \
-            "${{ needs.check.outputs.susfs_sha }}"
+            "${{ needs.check.outputs.susfs_sha }}" \
+            "${{ needs.check.outputs.release_notes }}"
