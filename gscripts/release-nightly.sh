@@ -12,11 +12,12 @@ source "${SCRIPT_DIR}/config.sh"
 # Arguments
 ###############################################################################
 
-[[ $# -eq 3 ]] || die "Usage: $0 <ksu_sha> <next_sha> <susfs_sha>"
+[[ $# -eq 4 ]] || die "Usage: $0 <source_sha> <ksu_sha> <next_sha> <susfs_sha>"
 
-KSU_SHA="$1"
-NEXT_SHA="$2"
-SUSFS_SHA="$3"
+SOURCE_SHA="$1"
+KSU_SHA="$2"
+NEXT_SHA="$3"
+SUSFS_SHA="$4"
 
 ###############################################################################
 # Verify build output
@@ -34,6 +35,7 @@ FILES=("${DIST_DIR}"/*.zip)
 
 cat > "${DIST_DIR}/nightly.json" <<EOF
 {
+  "source": "${SOURCE_SHA}",
   "kernelsu": "${KSU_SHA}",
   "kernelsu_next": "${NEXT_SHA}",
   "susfs": "${SUSFS_SHA}"
