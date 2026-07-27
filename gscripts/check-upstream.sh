@@ -124,13 +124,6 @@ else
 
     BUILD_VARIANTS=()
 
-    if [[ "${OLD_KSU}" != "${NEW_KSU}" ]]; then
-        BUILD_VARIANTS+=(ksu ksu-susfs)
-
-	SHORT_SHA="${NEW_KSU:0:7}"
-
-cat >>"$NOTES_FILE" <<EOF
-
 ### SOURCE
 if [[ "${OLD_SOURCE}" != "${NEW_SOURCE}" ]]; then
     BUILD_VARIANTS+=(
@@ -143,40 +136,44 @@ if [[ "${OLD_SOURCE}" != "${NEW_SOURCE}" ]]; then
     SHORT_SHA="${NEW_SOURCE:0:7}"
 
     cat >>"$NOTES_FILE" <<EOF
-### SULTAN17
+
+- ${SHORT_SHA} — ${SOURCE_MSG}
+
+EOF
+fi
+##KERNELSU
+    if [[ "${OLD_KSU}" != "${NEW_KSU}" ]]; then
+        BUILD_VARIANTS+=(ksu ksu-susfs)
+
+        SHORT_SHA="${NEW_KSU:0:7}"
+
+cat >>"$NOTES_FILE" <<EOF
 
 - ${SHORT_SHA} — ${SOURCE_MSG}
 
 EOF
 fi
 
-### KernelSU
-
-- ${SHORT_SHA} — ${KSU_MSG}
-
-EOF
-    fi
-
+### KERNELSU-NEXT
     if [[ "${OLD_NEXT}" != "${NEW_NEXT}" ]]; then
         BUILD_VARIANTS+=(ksu-next ksu-next-susfs)
 
 	SHORT_SHA="${NEW_NEXT:0:7}"
 
 cat >>"$NOTES_FILE" <<EOF
-### KernelSU-Next
 
 - ${SHORT_SHA} — ${NEXT_MSG}
 
 EOF
     fi
 
+###SUSFS
     if [[ "${OLD_SUSFS}" != "${NEW_SUSFS}" ]]; then
         BUILD_VARIANTS+=(ksu-susfs ksu-next-susfs)
 
 	SHORT_SHA="${NEW_SUSFS:0:7}"
 
 cat >>"$NOTES_FILE" <<EOF
-### SusFS
 
 - ${SHORT_SHA} — ${SUSFS_MSG}
 
