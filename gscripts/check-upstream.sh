@@ -51,6 +51,8 @@ repo_path() {
 ###############################################################################
 
 TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
 NOTES_FILE="${TMP}/release_notes.md"
 
 cat >"$NOTES_FILE" <<EOF
@@ -136,11 +138,13 @@ if [[ "${OLD_SOURCE}" != "${NEW_SOURCE}" ]]; then
     SHORT_SHA="${NEW_SOURCE:0:7}"
 
     cat >>"$NOTES_FILE" <<EOF
+### SULTAN17 SOURCE
 
 - ${SHORT_SHA} — ${SOURCE_MSG}
 
 EOF
-fi
+    fi
+
 ##KERNELSU
     if [[ "${OLD_KSU}" != "${NEW_KSU}" ]]; then
         BUILD_VARIANTS+=(ksu ksu-susfs)
@@ -148,11 +152,12 @@ fi
         SHORT_SHA="${NEW_KSU:0:7}"
 
 cat >>"$NOTES_FILE" <<EOF
+###KernelSU
 
-- ${SHORT_SHA} — ${SOURCE_MSG}
+- ${SHORT_SHA} — ${KSU_MSG}
 
 EOF
-fi
+    fi
 
 ### KERNELSU-NEXT
     if [[ "${OLD_NEXT}" != "${NEW_NEXT}" ]]; then
@@ -161,6 +166,7 @@ fi
 	SHORT_SHA="${NEW_NEXT:0:7}"
 
 cat >>"$NOTES_FILE" <<EOF
+###KernelSU-Next
 
 - ${SHORT_SHA} — ${NEXT_MSG}
 
@@ -174,6 +180,7 @@ EOF
 	SHORT_SHA="${NEW_SUSFS:0:7}"
 
 cat >>"$NOTES_FILE" <<EOF
+###SusFS
 
 - ${SHORT_SHA} — ${SUSFS_MSG}
 
@@ -225,16 +232,16 @@ fi
 # Outputs
 ###############################################################################
 
+ensure_directories
+
+cp -f "$NOTES_FILE" "${DIST_DIR}/release_notes.md"
+
 {
     echo "matrix=$JSON"
     echo "source_sha=$NEW_SOURCE"
     echo "ksu_sha=$NEW_KSU"
     echo "next_sha=$NEW_NEXT"
     echo "susfs_sha=$NEW_SUSFS"
-
-    echo "release_notes<<EOF"
-    cat "$NOTES_FILE"
-    echo "EOF"
 } >> "$GITHUB_OUTPUT"
 
 msg "Generated matrix"

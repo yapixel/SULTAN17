@@ -12,12 +12,13 @@ source "${SCRIPT_DIR}/config.sh"
 # Arguments
 ###############################################################################
 
-[[ $# -eq 4 ]] || die "Usage: $0 <source_sha> <ksu_sha> <next_sha> <susfs_sha>"
+[[ $# -eq 5 ]] || die "Usage: $0 <source_sha> <ksu_sha> <next_sha> <susfs_sha> <release_notes>"
 
 SOURCE_SHA="$1"
 KSU_SHA="$2"
 NEXT_SHA="$3"
 SUSFS_SHA="$4"
+RELEASE_NOTES="$5"
 
 ###############################################################################
 # Verify build output
@@ -75,6 +76,16 @@ msg "Uploading nightly.json"
 gh release upload Nightly \
     "${DIST_DIR}/nightly.json" \
     --clobber
+
+###############################################################################
+# Update release notes
+###############################################################################
+
+msg "Updating release notes"
+
+gh release edit Nightly \
+    --title "Nightly" \
+    --notes "$RELEASE_NOTES"
 
 ###############################################################################
 # Done
