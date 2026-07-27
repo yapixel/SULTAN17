@@ -52,7 +52,7 @@ if ! gh release view Nightly >/dev/null 2>&1; then
 
     gh release create Nightly \
         --title "Nightly" \
-        --notes "$RELEASE_NOTES"
+        --notes-file "${DIST_DIR}/release_notes.md"
 
 fi
 
@@ -84,7 +84,7 @@ msg "Updating release notes"
 
 gh release edit Nightly \
     --title "Nightly" \
-    --notes "$RELEASE_NOTES"
+    --notes-file "${DIST_DIR}/release_notes.md"
 
 ###############################################################################
 # Done
