@@ -85,7 +85,7 @@ msg "Updating release notes"
 
 gh release edit Nightly \
     --title "Nightly" \
-    --notes-file "$RELEASE_NOTES"
+    --notes "$RELEASE_NOTES"
 
 ###############################################################################
 # Done
