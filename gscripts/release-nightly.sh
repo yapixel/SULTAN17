@@ -12,12 +12,13 @@ source "${SCRIPT_DIR}/config.sh"
 # Arguments
 ###############################################################################
 
-[[ $# -eq 4 ]] || die "Usage: $0 <source_sha> <ksu_sha> <next_sha> <susfs_sha>"
+[[ $# -eq 5 ]] || die "Usage: $0 <source_sha> <ksu_sha> <next_sha> <susfs_sha> <release_notes>"
 
 SOURCE_SHA="$1"
 KSU_SHA="$2"
 NEXT_SHA="$3"
 SUSFS_SHA="$4"
+RELEASE_NOTES="$5"
 
 ###############################################################################
 # Verify build output
@@ -52,7 +53,7 @@ if ! gh release view Nightly >/dev/null 2>&1; then
 
     gh release create Nightly \
         --title "Nightly" \
-        --notes-file "${DIST_DIR}/release_notes.md"
+        --notes "$RELEASE_NOTES"
 
 fi
 
@@ -84,7 +85,7 @@ msg "Updating release notes"
 
 gh release edit Nightly \
     --title "Nightly" \
-    --notes-file "${DIST_DIR}/release_notes.md"
+    --notes-file "$RELEASE_NOTES"
 
 ###############################################################################
 # Done

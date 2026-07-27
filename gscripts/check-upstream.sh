@@ -232,16 +232,15 @@ fi
 # Outputs
 ###############################################################################
 
-ensure_directories
-
-cp -f "$NOTES_FILE" "${DIST_DIR}/release_notes.md"
-
 {
     echo "matrix=$JSON"
     echo "source_sha=$NEW_SOURCE"
     echo "ksu_sha=$NEW_KSU"
     echo "next_sha=$NEW_NEXT"
     echo "susfs_sha=$NEW_SUSFS"
+    echo "release_notes<<EOF"
+    cat "$NOTES_FILE"
+    echo "EOF"
 } >> "$GITHUB_OUTPUT"
 
 msg "Generated matrix"

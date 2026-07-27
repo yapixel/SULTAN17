@@ -16,6 +16,7 @@ jobs:
       ksu_sha: ${{ steps.check.outputs.ksu_sha }}
       next_sha: ${{ steps.check.outputs.next_sha }}
       susfs_sha: ${{ steps.check.outputs.susfs_sha }}
+      release_notes: ${{ steps.check.outputs.release_notes }}
 
     steps:
       - uses: actions/checkout@v4
