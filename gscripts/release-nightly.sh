@@ -12,13 +12,12 @@ source "${SCRIPT_DIR}/config.sh"
 # Arguments
 ###############################################################################
 
-[[ $# -eq 5 ]] || die "Usage: $0 <source_sha> <ksu_sha> <next_sha> <susfs_sha> <release_notes>"
+[[ $# -eq 4 ]] || die "Usage: $0 <source_sha> <ksu_sha> <next_sha> <susfs_sha>"
 
 SOURCE_SHA="$1"
 KSU_SHA="$2"
 NEXT_SHA="$3"
 SUSFS_SHA="$4"
-RELEASE_NOTES="$5"
 
 ###############################################################################
 # Verify build output
