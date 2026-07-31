@@ -94,9 +94,19 @@ install_ksu() {
 }
 
 install_ksu_next() {
-	msg "Cloning KernelSU-Next"
+    local branch="${1:-dev}"
 
-	curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s dev
+    case "${branch}" in
+        dev|legacy)
+            ;;
+        *)
+            die "Invalid KernelSU-Next branch: ${branch} (expected: dev or legacy)"
+            ;;
+    esac
+
+    msg "Cloning KernelSU-Next (${branch})"
+
+    curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s "${branch}"
 }
 
 patch_utf8() {
@@ -227,7 +237,7 @@ case "$VARIANT" in
 	msg "$TARGET $VARIANT done"
         ;;
     ksu-next)
-        install_ksu_next
+        install_ksu_next legacy
 	patch_scopemin
 	patch_utf8
 	echo "$TARGET $VARIANT done"
