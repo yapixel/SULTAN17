@@ -237,7 +237,7 @@ case "$VARIANT" in
 	msg "$TARGET $VARIANT done"
         ;;
     ksu-next)
-        install_ksu_next legacy
+    install_ksu_next dev
 	patch_scopemin
 	patch_utf8
 	echo "$TARGET $VARIANT done"
