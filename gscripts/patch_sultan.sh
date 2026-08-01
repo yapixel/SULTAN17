@@ -223,7 +223,7 @@ case "$VARIANT" in
     stock)
         ;;
     ksu)
-        install_ksu
+    install_ksu
 	patch_scopemin
 	patch_utf8
 	msg "$TARGET $VARIANT done"
