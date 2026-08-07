@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/config.sh"
 
 if [ $# -ne 2 ]; then
-    echo "Usage: $0 <gs201|zuma|zumapro> <stock|ksu|ksu-susfs|ksu-next|ksu-next-susfs"
+    echo "Usage: $0 <gs201|zuma|zumapro> <ksu-susfs|ksu-next-susfs"
     exit 1
 fi
 
@@ -34,12 +34,12 @@ case "$1" in
 esac
 
 case "$2" in
-    stock|ksu|ksu-susfs|ksu-next|ksu-next-susfs)
+    ksu-susfs|ksu-next-susfs)
         VARIANT="$2"
         ;;
     *)
         echo "Error: '$2' is not a valid variant."
-        echo "Usage: $0 <gs201|zuma|zumapro> <stock|ksu|ksu-susfs|ksu-next|ksu-next-susfs"
+        echo "Usage: $0 <gs201|zuma|zumapro> <ksu-susfs|ksu-next-susfs"
         exit 1
         ;;
 esac
@@ -113,12 +113,6 @@ patch_utf8() {
 	msg "Patching UTF8"
 
 	patch -p1 < "$KERNEL_REPO"/kernel_patches/common/unicode_bypass_fix_6.1+.patch || true
-}
-
-patch_scopemin() {
-	msg "Patching Scope Min 1.6"
-
-	patch -p1 < "$KERNEL_REPO"/kernel_patches/next/scope_min_manual_hooks_v1.6.patch || true
 }
 
 apply_patch() {
@@ -220,14 +214,6 @@ patch_sultan() {
 clone_kernel_patches
 
 case "$VARIANT" in
-    stock)
-        ;;
-    ksu)
-    install_ksu
-	patch_scopemin
-	patch_utf8
-	msg "$TARGET $VARIANT done"
-        ;;
     ksu-susfs)
 	install_ksu
 	clone_susfs
@@ -235,12 +221,6 @@ case "$VARIANT" in
 	patch_susfs_ksu
 	patch_sultan
 	msg "$TARGET $VARIANT done"
-        ;;
-    ksu-next)
-    install_ksu_next dev
-	patch_scopemin
-	patch_utf8
-	echo "$TARGET $VARIANT done"
         ;;
     ksu-next-susfs)
 	install_ksu_next
@@ -256,21 +236,17 @@ esac
 
 DEFCONFIG="$KERNEL_REPO/arch/arm64/configs/${TARGET}_defconfig"
 
-if [[ "$VARIANT" != "stock" ]]; then
 #KSU
-        if ! grep -q "^CONFIG_KSU=y$" "$DEFCONFIG"; then
-                echo "CONFIG_KSU=y" >> "$DEFCONFIG"
-        fi
+if ! grep -q "^CONFIG_KSU=y$" "$DEFCONFIG"; then
+        echo "CONFIG_KSU=y" >> "$DEFCONFIG"
+fi
 
-#SUS_SU
-        if [[ "$VARIANT" == *"-susfs" ]]; then
-                if ! grep -q "^CONFIG_KSU_SUSFS_SUS_SU=n$" "$DEFCONFIG"; then
-                        echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$DEFCONFIG"
-                fi
-                if ! grep -q "^CONFIG_KSU_SUSFS=y$" "$DEFCONFIG"; then
-                        echo "CONFIG_KSU_SUSFS=y" >> "$DEFCONFIG"
-                fi
-	fi
+#SUSFS
+if ! grep -q "^CONFIG_KSU_SUSFS_SUS_SU=n$" "$DEFCONFIG"; then
+        echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$DEFCONFIG"
+fi
+if ! grep -q "^CONFIG_KSU_SUSFS=y$" "$DEFCONFIG"; then
+        echo "CONFIG_KSU_SUSFS=y" >> "$DEFCONFIG"
 fi
 
 ##fetch anykernel
