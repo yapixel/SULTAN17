@@ -21,9 +21,7 @@ on:
         default: all
         options:
           - all
-          - ksu
           - ksu-susfs
-          - ksu-next
           - ksu-next-susfs
 
 jobs:
@@ -52,9 +50,7 @@ jobs:
 
           if [[ "$VARIANT" == "all" ]]; then
               VARIANTS=(
-                  ksu
                   ksu-susfs
-                  ksu-next
                   ksu-next-susfs
               )
           else
