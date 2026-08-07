@@ -45,10 +45,7 @@ readonly TARGETS=(
 )
 
 readonly VARIANTS=(
-    stock
-    ksu
     ksu-susfs
-    ksu-next
     ksu-next-susfs
 )
 
