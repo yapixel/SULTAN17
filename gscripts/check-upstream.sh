@@ -111,9 +111,7 @@ if [[ ! -f "${JSON_FILE}" ]]; then
     msg "First nightly run detected."
 
     BUILD_VARIANTS=(
-        ksu
         ksu-susfs
-        ksu-next
         ksu-next-susfs
     )
 
@@ -129,9 +127,7 @@ else
 ### SOURCE
 if [[ "${OLD_SOURCE}" != "${NEW_SOURCE}" ]]; then
     BUILD_VARIANTS+=(
-        ksu
         ksu-susfs
-        ksu-next
         ksu-next-susfs
     )
 
@@ -147,7 +143,7 @@ EOF
 
 ##KERNELSU
     if [[ "${OLD_KSU}" != "${NEW_KSU}" ]]; then
-        BUILD_VARIANTS+=(ksu ksu-susfs)
+        BUILD_VARIANTS+=(ksu-susfs)
 
         SHORT_SHA="${NEW_KSU:0:7}"
 
@@ -161,7 +157,7 @@ EOF
 
 ### KERNELSU-NEXT
     if [[ "${OLD_NEXT}" != "${NEW_NEXT}" ]]; then
-        BUILD_VARIANTS+=(ksu-next ksu-next-susfs)
+        BUILD_VARIANTS+=(ksu-next-susfs)
 
 	SHORT_SHA="${NEW_NEXT:0:7}"
 
