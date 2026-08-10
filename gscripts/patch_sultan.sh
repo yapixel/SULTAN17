@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/config.sh"
 
 if [ $# -ne 2 ]; then
-    echo "Usage: $0 <gs201|zuma|zumapro> <ksu-susfs|ksu-next-susfs"
+    echo "Usage: $0 <gs201|zuma|zumapro> <ksu-susfs|ksu-susfs-nomount|ksu-next-susfs|ksu-next-susfs-nomount"
     exit 1
 fi
 
@@ -34,12 +34,12 @@ case "$1" in
 esac
 
 case "$2" in
-    ksu-susfs|ksu-next-susfs)
+    ksu-susfs|ksu-susfs-nomount|ksu-next-susfs|ksu-next-susfs-nomount)
         VARIANT="$2"
         ;;
     *)
         echo "Error: '$2' is not a valid variant."
-        echo "Usage: $0 <gs201|zuma|zumapro> <ksu-susfs|ksu-next-susfs"
+        echo "Usage: $0 <gs201|zuma|zumapro> <ksu-susfs|ksu-susfs-nomount|ksu-next-susfs|ksu-next-susfs-nomount"
         exit 1
         ;;
 esac
@@ -52,6 +52,7 @@ esac
 
 readonly KERNEL_REPO="${REPO_ROOT}"
 readonly PATCHES_REPO="https://github.com/Ante0/kernel_patches"
+readonly NOMOUNT_REPO="https://github.com/maxsteeel/nomount"
 
 ######################################################
 
@@ -77,6 +78,15 @@ clone_kernel_patches() {
 		"${PATCHES_REPO}" \
 		kernel_patches
 }
+
+clone_nomount() {
+	msg "Cloning Nomount"
+
+	git clone \
+		--depth=1 \
+		"${NOMOUNT_REPO}"
+	}
+		
 
 clone_susfs() {
 	msg "Cloning SUSFS"
@@ -137,6 +147,20 @@ copy_susfs() {
         cp "$KERNEL_REPO"/susfs4ksu/kernel_patches/include/linux/* "$KERNEL_REPO"/include/linux/
 }
 ##
+
+##Copy nomount
+copy_nomount() {
+		cp "$KERNEL_REPO"/nomount/kernel/src/* "$KERNEL_REPO"/fs/
+}
+
+patch_nomount() {
+		msg "Copying NoMount"
+		copy_nomount
+		msg "Applying NoMount patch"
+		apply_patch_optional \
+			"$KERNEL_REPO" \
+			"$KERNEL_REPO/nomount/kernel/patches/nomount_6.1_kernel_integration.patch"
+}
 
 patch_susfs_ksu() {
 	msg "Copying susfs libs"
@@ -222,12 +246,32 @@ case "$VARIANT" in
 	patch_sultan
 	msg "$TARGET $VARIANT done"
         ;;
+	ksu-susfs-nomount)
+	install_ksu
+	clone_susfs
+	clone_nomount
+	patch_utf8
+	patch_susfs_ksu
+	patch_sultan
+	patch_nomount
+	msg "$TARGET $VARIANT done"
+		;;
     ksu-next-susfs)
 	install_ksu_next
 	clone_susfs
 	patch_utf8
 	patch_susfs_ksu_next
 	patch_sultan
+	echo "$TARGET $VARIANT done"
+        ;;
+	ksu-next-susfs-nomount)
+	install_ksu_next
+	clone_susfs
+	clone_nomount
+	patch_utf8
+	patch_susfs_ksu_next
+	patch_sultan
+	patch_nomount
 	echo "$TARGET $VARIANT done"
         ;;
 esac
