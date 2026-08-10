@@ -46,7 +46,9 @@ readonly TARGETS=(
 
 readonly VARIANTS=(
     ksu-susfs
+    ksu-susfs-nomount
     ksu-next-susfs
+    ksu-next-susfs-nomount
 )
 
 ###############################################################################
