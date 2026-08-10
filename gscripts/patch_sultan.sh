@@ -45,15 +45,6 @@ case "$2" in
 esac
 
 ######################################################
-
-######################################################
-# VARIABLES
-######################################################
-
-readonly KERNEL_REPO="${REPO_ROOT}"
-readonly PATCHES_REPO="https://github.com/Ante0/kernel_patches"
-readonly NOMOUNT_REPO="https://github.com/maxsteeel/nomount"
-
 ######################################################
 
 ######################################################
