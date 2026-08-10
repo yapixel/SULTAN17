@@ -23,6 +23,8 @@ on:
           - all
           - ksu-susfs
           - ksu-next-susfs
+          - ksu-susfs-nomount
+          - ksu-next-susfs-nomount
 
 jobs:
   matrix:
@@ -52,6 +54,8 @@ jobs:
               VARIANTS=(
                   ksu-susfs
                   ksu-next-susfs
+                  ksu-susfs-nomount
+                  ksu-next-susfs-nomount
               )
           else
               VARIANTS=("$VARIANT")
