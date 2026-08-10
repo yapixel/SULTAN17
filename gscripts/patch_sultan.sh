@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/config.sh"
 
 if [ $# -ne 2 ]; then
-    echo "Usage: $0 <gs201|zuma|zumapro> <ksu-susfs|ksu-susfs-nomount|ksu-next-susfs|ksu-next-susfs-nomount"
+    echo "Usage: $0 <gs201|zuma|zumapro> <ksu-susfs|ksu-susfs-nomount|ksu-susfs-zeromount|ksu-next-susfs|ksu-next-susfs-nomount|ksu-next-susfs-zeromount"
     exit 1
 fi
 
@@ -34,12 +34,12 @@ case "$1" in
 esac
 
 case "$2" in
-    ksu-susfs|ksu-susfs-nomount|ksu-next-susfs|ksu-next-susfs-nomount)
+    ksu-susfs|ksu-susfs-nomount|ksu-susfs-zeromount|ksu-next-susfs|ksu-next-susfs-nomount|ksu-next-susfs-zeromount)
         VARIANT="$2"
         ;;
     *)
         echo "Error: '$2' is not a valid variant."
-        echo "Usage: $0 <gs201|zuma|zumapro> <ksu-susfs|ksu-susfs-nomount|ksu-next-susfs|ksu-next-susfs-nomount"
+        echo "Usage: $0 <gs201|zuma|zumapro> <ksu-susfs|ksu-susfs-nomount|ksu-susfs-zeromount|ksu-next-susfs|ksu-next-susfs-nomount|ksu-next-susfs-zeromount"
         exit 1
         ;;
 esac
@@ -77,7 +77,14 @@ clone_nomount() {
 		--depth=1 \
 		"${NOMOUNT_REPO}"
 	}
-		
+
+clone_sb() {
+	msg "Cloning Super-Builders (Zeromount)"
+
+	git clone \
+		--depth=1 \
+		"${SB_REPO}"
+}
 
 clone_susfs() {
 	msg "Cloning SUSFS"
@@ -143,6 +150,13 @@ copy_susfs() {
 copy_nomount() {
 		cp "$KERNEL_REPO"/nomount/kernel/src/* "$KERNEL_REPO"/fs/
 }
+
+patch_zeromount() {
+		msg "Applying Zeromount patch"
+		apply_patch_optional \
+			"$KERNEL_REPO" \
+			"$KERNEL_REPO/Super-Builders/android14-6.1/KernelSU-Next/patches/60_zeromount-android14-6.1.patch"
+} 
 
 patch_nomount() {
 		msg "Copying NoMount"
@@ -247,6 +261,16 @@ case "$VARIANT" in
 	patch_nomount
 	msg "$TARGET $VARIANT done"
 		;;
+	ksu-susfs-zeromount)
+	install_ksu
+	clone_susfs
+	clone_sb
+	patch_utf8
+	patch_susfs_ksu
+	patch_sultan
+	patch_zeromount
+	msg "$TARGET $VARIANT done"
+		;;
     ksu-next-susfs)
 	install_ksu_next
 	clone_susfs
@@ -263,6 +287,16 @@ case "$VARIANT" in
 	patch_susfs_ksu_next
 	patch_sultan
 	patch_nomount
+	echo "$TARGET $VARIANT done"
+        ;;
+	ksu-next-susfs-zeromount)
+	install_ksu_next
+	clone_susfs
+	clone_sb
+	patch_utf8
+	patch_susfs_ksu_next
+	patch_sultan
+	patch_zeromount
 	echo "$TARGET $VARIANT done"
         ;;
 esac
@@ -287,6 +321,11 @@ fi
 if [[ "$VARIANT" == *"-nomount" ]]; then
                 if ! grep -q "^CONFIG_NOMOUNT=y$" "$DEFCONFIG"; then
                         echo "CONFIG_NOMOUNT=y" >> "$DEFCONFIG"
+                fi
+fi
+if [[ "$VARIANT" == *"-zeromount" ]]; then
+                if ! grep -q "^CONFIG_ZEROMOUNT=y$" "$DEFCONFIG"; then
+                        echo "CONFIG_ZEROMOUNT=y" >> "$DEFCONFIG"
                 fi
 fi
 
