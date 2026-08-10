@@ -78,14 +78,6 @@ clone_nomount() {
 		"${NOMOUNT_REPO}"
 	}
 
-clone_sb() {
-	msg "Cloning Super-Builders (Zeromount)"
-
-	git clone \
-		--depth=1 \
-		"${SB_REPO}"
-}
-
 clone_susfs() {
 	msg "Cloning SUSFS"
 
@@ -155,7 +147,7 @@ patch_zeromount() {
 		msg "Applying Zeromount patch"
 		apply_patch_optional \
 			"$KERNEL_REPO" \
-			"$KERNEL_REPO/Super-Builders/android14-6.1/KernelSU-Next/patches/60_zeromount-android14-6.1.patch"
+			"$KERNEL_REPO/kernel_patches/sultan/60_zeromount-android14-6.1.patch"
 } 
 
 patch_nomount() {
@@ -264,7 +256,6 @@ case "$VARIANT" in
 	ksu-susfs-zeromount)
 	install_ksu
 	clone_susfs
-	clone_sb
 	patch_utf8
 	patch_susfs_ksu
 	patch_sultan
@@ -292,7 +283,6 @@ case "$VARIANT" in
 	ksu-next-susfs-zeromount)
 	install_ksu_next
 	clone_susfs
-	clone_sb
 	patch_utf8
 	patch_susfs_ksu_next
 	patch_sultan
