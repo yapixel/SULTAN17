@@ -75,7 +75,7 @@ clone_nomount() {
 
 	git clone \
 		--depth=1 \
-		"-b ${NOMOUNT_BRANCH}" \
+		-b "${NOMOUNT_BRANCH}" \
 		"${NOMOUNT_REPO}"
 		
 	}
