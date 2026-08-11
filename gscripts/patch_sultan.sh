@@ -147,7 +147,7 @@ patch_zeromount() {
 		msg "Applying Zeromount patch"
 		apply_patch_optional \
 			"$KERNEL_REPO" \
-			"$KERNEL_REPO/kernel_patches/sultan/60_zeromount-android14-6.1.patch"
+			"$KERNEL_REPO/kernel_patches/sultan/zeromount.patch"
 } 
 
 patch_nomount() {
