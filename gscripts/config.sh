@@ -79,7 +79,8 @@ readonly ANYKERNEL_BRANCH_PREFIX="sultan-17"
 
 readonly PATCHES_REPO="https://github.com/Ante0/kernel_patches"
 readonly NOMOUNT_REPO="https://github.com/maxsteeel/nomount"
-readonly ZEROMOUNT_REPO="https://github.com/Enginex0/zeromount"
+readonly NOMOUNT_BRANCH="dev"
+
 readonly SB_REPO="https://github.com/Enginex0/Super-Builders/" 
 
 ###############################################################################
