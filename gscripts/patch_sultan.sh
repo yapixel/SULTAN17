@@ -90,25 +90,45 @@ clone_susfs() {
 }
 
 install_ksu() {
-	msg "Cloning KernelSU"
+    msg "Cloning KernelSU"
 
-	curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
+    local setup_script
+    setup_script="$(mktemp)"
+    trap 'rm -f "$setup_script"' RETURN
+
+    curl \
+        --fail \
+        --location \
+        --silent \
+        --show-error \
+        --retry 5 \
+        --retry-delay 5 \
+        --retry-all-errors \
+        "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" \
+        -o "$setup_script"
+
+    bash "$setup_script" "$KSU_BRANCH"
 }
 
 install_ksu_next() {
-    local branch="${1:-dev}"
+    msg "Cloning KernelSU-Next"
 
-    case "${branch}" in
-        dev|legacy)
-            ;;
-        *)
-            die "Invalid KernelSU-Next branch: ${branch} (expected: dev or legacy)"
-            ;;
-    esac
+    local setup_script
+    setup_script="$(mktemp)"
+    trap 'rm -f "$setup_script"' RETURN
 
-    msg "Cloning KernelSU-Next (${branch})"
+    curl \
+        --fail \
+        --location \
+        --silent \
+        --show-error \
+        --retry 5 \
+        --retry-delay 5 \
+        --retry-all-errors \
+		"https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" \
+        -o "$setup_script"
 
-    curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s "${branch}"
+    bash "$setup_script" "$KSU_NEXT_BRANCH"
 }
 
 patch_utf8() {
