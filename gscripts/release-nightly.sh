@@ -12,13 +12,14 @@ source "${SCRIPT_DIR}/config.sh"
 # Arguments
 ###############################################################################
 
-[[ $# -eq 5 ]] || die "Usage: $0 <source_sha> <ksu_sha> <next_sha> <susfs_sha> <release_notes>"
+[[ $# -eq 6 ]] || die "Usage: $0 <source_sha> <ksu_sha> <next_sha> <susfs_sha> <nomount_sha> <release_notes>"
 
 SOURCE_SHA="$1"
 KSU_SHA="$2"
 NEXT_SHA="$3"
 SUSFS_SHA="$4"
-RELEASE_NOTES="$5"
+NOMOUNT_SHA="$5"
+RELEASE_NOTES="$6"
 
 ###############################################################################
 # Verify build output
@@ -39,7 +40,8 @@ cat > "${DIST_DIR}/nightly.json" <<EOF
   "source": "${SOURCE_SHA}",
   "kernelsu": "${KSU_SHA}",
   "kernelsu_next": "${NEXT_SHA}",
-  "susfs": "${SUSFS_SHA}"
+  "susfs": "${SUSFS_SHA}",
+  "nomount": "${NOMOUNT_SHA}"
 }
 EOF
 
