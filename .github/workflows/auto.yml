@@ -16,6 +16,7 @@ jobs:
       ksu_sha: ${{ steps.check.outputs.ksu_sha }}
       next_sha: ${{ steps.check.outputs.next_sha }}
       susfs_sha: ${{ steps.check.outputs.susfs_sha }}
+      nomount_sha: ${{ steps.check.outputs.nomount_sha }}
       release_notes: ${{ steps.check.outputs.release_notes }}
 
     steps:
@@ -88,4 +89,5 @@ jobs:
             "${{ needs.check.outputs.ksu_sha }}" \
             "${{ needs.check.outputs.next_sha }}" \
             "${{ needs.check.outputs.susfs_sha }}" \
+            "${{ needs.check.outputs.nomount_sha }}" \
             "${{ needs.check.outputs.release_notes }}"
