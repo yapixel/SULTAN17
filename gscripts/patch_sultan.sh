@@ -84,7 +84,7 @@ clone_nomount() {
         --retry 5 \
         --retry-delay 5 \
         --retry-all-errors \
-        "curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh" \
+        "https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh" \
         -o "$setup_script"
 
     bash "$setup_script" "$NOMOUNT_BRANCH"
