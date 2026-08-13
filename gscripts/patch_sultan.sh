@@ -84,7 +84,7 @@ clone_nomount() {
         --retry 5 \
         --retry-delay 5 \
         --retry-all-errors \
-        "curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s dev" \
+        "curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh" \
         -o "$setup_script"
 
     bash "$setup_script" "$NOMOUNT_BRANCH"
@@ -170,20 +170,6 @@ copy_susfs() {
         cp "$KERNEL_REPO"/susfs4ksu/kernel_patches/include/linux/* "$KERNEL_REPO"/include/linux/
 }
 ##
-
-##Copy nomount
-copy_nomount() {
-		cp "$KERNEL_REPO"/nomount/kernel/src/* "$KERNEL_REPO"/fs/
-}
-
-patch_nomount() {
-		msg "Copying NoMount"
-		copy_nomount
-		msg "Applying NoMount patch"
-		apply_patch_optional \
-			"$KERNEL_REPO" \
-			"$KERNEL_REPO/nomount/kernel/patches/nomount_6.1_kernel_integration.patch"
-}
 
 patch_susfs_ksu() {
 	msg "Copying susfs libs"
@@ -272,11 +258,10 @@ case "$VARIANT" in
 	ksu-susfs-nomount)
 	install_ksu
 	clone_susfs
-	clone_nomount
 	patch_utf8
 	patch_susfs_ksu
 	patch_sultan
-	patch_nomount
+	clone_nomount
 	msg "$TARGET $VARIANT done"
 		;;
     ksu-next-susfs)
@@ -290,11 +275,10 @@ case "$VARIANT" in
 	ksu-next-susfs-nomount)
 	install_ksu_next
 	clone_susfs
-	clone_nomount
 	patch_utf8
 	patch_susfs_ksu_next
 	patch_sultan
-	patch_nomount
+	clone_nomount
 	echo "$TARGET $VARIANT done"
         ;;
 esac
