@@ -73,10 +73,21 @@ clone_kernel_patches() {
 clone_nomount() {
 	msg "Cloning Nomount"
 
-	git clone \
-		--depth=1 \
-		-b "${NOMOUNT_BRANCH}" \
-		"${NOMOUNT_REPO}"
+	setup_script="$(mktemp)"
+    trap 'rm -f "$setup_script"' RETURN
+
+    curl \
+        --fail \
+        --location \
+        --silent \
+        --show-error \
+        --retry 5 \
+        --retry-delay 5 \
+        --retry-all-errors \
+        "curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s dev" \
+        -o "$setup_script"
+
+    bash "$setup_script" "$NOMOUNT_BRANCH"
 		
 	}
 
