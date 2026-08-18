@@ -62,6 +62,15 @@ clone_anykernel() {
 }
 
 clone_kernel_patches() {
+        msg "Cloning sultan patches"
+
+        git clone \
+                --depth=1 \
+                "${PATCHES2_REPO}" \
+                sultan_patches
+}
+
+clone_kernel_patches() {
 	msg "Cloning kernel patches"
 
 	git clone \
@@ -88,7 +97,7 @@ clone_nomount() {
         -o "$setup_script"
 
     bash "$setup_script" "$NOMOUNT_BRANCH"
-		
+
 	}
 
 clone_susfs() {
@@ -235,16 +244,17 @@ patch_susfs_ksu_next() {
 }
 
 patch_sultan() {
-	msg "Applying Sultan specific patches (fs/open.c, fs/namespace.c and kernel/sys.c)"
+	msg "Applying Sultan specific patches (fs/namespace.c and kernel/sys.c)"
 	apply_patch_optional \
 		"$KERNEL_REPO" \
-		"$KERNEL_REPO/kernel_patches/sultan/fixer.patch"
+		"$KERNEL_REPO/sultan_patches/sultan/fixer.patch"
 }
 
 ######################################################
 
 #clone kernel_patches
 clone_kernel_patches
+clone_sultan_patches
 
 case "$VARIANT" in
     ksu-susfs)
