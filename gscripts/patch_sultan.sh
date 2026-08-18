@@ -236,11 +236,16 @@ patch_susfs_ksu_next() {
 
         apply_patch_optional \
                 "$KERNEL_REPO/KernelSU-Next" \
+                "$KERNEL_REPO/sultan_patches/next/susfs_fix_patches/v2.2.0/fix_sucompat_2.patch"
+
+        apply_patch_optional \
+                "$KERNEL_REPO/KernelSU-Next" \
                 "$KERNEL_REPO/kernel_patches/next/susfs_fix_patches/v2.2.0/ksu_toolkit.patch"
 
         apply_patch_optional \
                 "$KERNEL_REPO/KernelSU-Next" \
                 "$KERNEL_REPO/kernel_patches/next/susfs_fix_patches/v2.2.0/overwrite_hook_mode.patch"
+
 }
 
 patch_sultan() {
