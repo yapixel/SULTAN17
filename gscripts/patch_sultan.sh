@@ -61,7 +61,7 @@ clone_anykernel() {
 		AnyKernel
 }
 
-clone_kernel_patches() {
+clone_sultan_patches() {
         msg "Cloning sultan patches"
 
         git clone \
