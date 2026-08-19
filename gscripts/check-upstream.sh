@@ -60,6 +60,10 @@ cat >"$NOTES_FILE" <<EOF
 
 This build was triggered by upstream changes.
 
+Note: NoMount stuck on build 1.1.1 254 due to changes that breaks it.
+Either use Max's 254 module or use mine in my nomount fork. 
+
+
 EOF
 
 JSON_FILE="${TMP}/nightly.json"
