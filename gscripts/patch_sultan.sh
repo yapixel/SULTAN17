@@ -93,7 +93,7 @@ clone_nomount() {
         --retry 5 \
         --retry-delay 5 \
         --retry-all-errors \
-        "https://raw.githubusercontent.com/Ante0/nomount254/refs/heads/dev/kernel/setup.sh" \
+        "https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh" \
         -o "$setup_script"
 
     bash "$setup_script" "$NOMOUNT_BRANCH"
@@ -255,6 +255,17 @@ patch_sultan() {
 		"$KERNEL_REPO/sultan_patches/sultan/fixer.patch"
 }
 
+patch_nomount() {
+        msg "Applying NoMount hook patches (nomount.c, fs/proc/inode.c, include/linux/proc_fs.h"
+        apply_patch_optional \
+                "$KERNEL_REPO/NoMount" \
+                "$KERNEL_REPO/sultan_patches/sultan/nomount-sultan-patch_b275.patch"
+
+	apply_patch_optional \
+                "$KERNEL_REPO" \
+                "$KERNEL_REPO/sultan_patches/sultan/nomount-sultan-proc-hook.patch"
+}
+
 ######################################################
 
 #clone kernel_patches
@@ -277,6 +288,7 @@ case "$VARIANT" in
 	patch_susfs_ksu
 	patch_sultan
 	clone_nomount
+	patch_nomount
 	msg "$TARGET $VARIANT done"
 		;;
     ksu-next-susfs)
@@ -294,6 +306,7 @@ case "$VARIANT" in
 	patch_susfs_ksu_next
 	patch_sultan
 	clone_nomount
+	patch_nomount
 	echo "$TARGET $VARIANT done"
         ;;
 esac

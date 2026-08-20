@@ -81,10 +81,9 @@ readonly ANYKERNEL_BRANCH_PREFIX="sultan-17"
 
 readonly PATCHES_REPO="https://github.com/WildKernels/kernel_patches"
 readonly PATCHES2_REPO="https://github.com/Ante0/kernel_patches"
-readonly NOMOUNT_REPO="https://github.com/Ante0/nomount254"
-readonly NOMOUNT_BRANCH="dev"
 
-readonly SB_REPO="https://github.com/Enginex0/Super-Builders/" 
+readonly NOMOUNT_REPO="https://github.com/maxsteeel/nomount"
+readonly NOMOUNT_BRANCH="dev"
 
 ###############################################################################
 # Release
