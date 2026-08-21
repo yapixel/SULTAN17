@@ -236,10 +236,6 @@ patch_susfs_ksu_next() {
 
         apply_patch_optional \
                 "$KERNEL_REPO/KernelSU-Next" \
-                "$KERNEL_REPO/sultan_patches/next/susfs_fix_patches/v2.2.0/fix_sucompat_2.patch"
-
-        apply_patch_optional \
-                "$KERNEL_REPO/KernelSU-Next" \
                 "$KERNEL_REPO/kernel_patches/next/susfs_fix_patches/v2.2.0/ksu_toolkit.patch"
 
         apply_patch_optional \
@@ -252,7 +248,7 @@ patch_sultan() {
 	msg "Applying Sultan specific patches (fs/namespace.c and kernel/sys.c)"
 	apply_patch_optional \
 		"$KERNEL_REPO" \
-		"$KERNEL_REPO/fix_patches/fixer.patch"
+		"$KERNEL_REPO/sultan_patches/fixer.patch"
 }
 
 patch_nomount() {
