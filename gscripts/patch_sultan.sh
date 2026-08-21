@@ -252,7 +252,7 @@ patch_sultan() {
 	msg "Applying Sultan specific patches (fs/namespace.c and kernel/sys.c)"
 	apply_patch_optional \
 		"$KERNEL_REPO" \
-		"$KERNEL_REPO/sultan_patches/sultan/fixer.patch"
+		"$KERNEL_REPO/fix_patches/fixer.patch"
 }
 
 patch_nomount() {
@@ -288,7 +288,6 @@ case "$VARIANT" in
 	patch_susfs_ksu
 	patch_sultan
 	clone_nomount
-	patch_nomount
 	msg "$TARGET $VARIANT done"
 		;;
     ksu-next-susfs)
@@ -306,7 +305,6 @@ case "$VARIANT" in
 	patch_susfs_ksu_next
 	patch_sultan
 	clone_nomount
-	patch_nomount
 	echo "$TARGET $VARIANT done"
         ;;
 esac
