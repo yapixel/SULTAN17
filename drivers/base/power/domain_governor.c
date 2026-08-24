@@ -346,6 +346,8 @@ static bool cpu_power_down_ok(struct dev_pm_domain *pd)
 	struct cpuidle_device *dev;
 	ktime_t domain_wakeup, next_hrtimer;
 	ktime_t now = ktime_get();
+	struct device *cpu_dev;
+	s64 cpu_constraint, global_constraint;
 	s64 idle_duration_ns;
 	int cpu, i;
 
@@ -355,6 +357,8 @@ static bool cpu_power_down_ok(struct dev_pm_domain *pd)
 
 	if (!(genpd->flags & GENPD_FLAG_CPU_DOMAIN))
 		return true;
+
+	global_constraint = cpu_latency_qos_limit(cpu);
 
 	/*
 	 * Find the next wakeup for any of the online CPUs within the PM domain
@@ -369,7 +373,14 @@ static bool cpu_power_down_ok(struct dev_pm_domain *pd)
 			if (ktime_before(next_hrtimer, domain_wakeup))
 				domain_wakeup = next_hrtimer;
 		}
+		cpu_dev = get_cpu_device(cpu);
+		if (cpu_dev) {
+			cpu_constraint = dev_pm_qos_raw_resume_latency(cpu_dev);
+			if (cpu_constraint < global_constraint)
+				global_constraint = cpu_constraint;
+		}
 	}
+	global_constraint *= NSEC_PER_USEC;
 
 	/* The minimum idle duration is from now - until the next wakeup. */
 	idle_duration_ns = ktime_to_ns(ktime_sub(domain_wakeup, now));
