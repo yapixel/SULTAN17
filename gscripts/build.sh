@@ -99,3 +99,24 @@ cp "${IMAGE}" "${ANYKERNEL_DIR}/Image.lz4"
 cat "${DTB_DIR}"/*.dtb > "${ANYKERNEL_DIR}/dtb"
 
 msg "Kernel build completed"
+
+if [[ "${CI:-false}" != "true" ]]; then
+    ZIP_NAME="SULTAN17_${TARGET}.zip"
+
+    msg "Creating ${ZIP_NAME}"
+    msg "Packaging ${ZIP_NAME}"
+
+	(
+    		cd "${ANYKERNEL_DIR}"
+
+    		zip -r \
+        	"${DIST_DIR}/${ZIP_NAME}" \
+        	. \
+        	-x ".git/*" \
+       		-x ".github/*" \
+        	-x "*.zip" \
+        	-x "README.md"
+	)
+
+    msg "Created ${REPO_ROOT}/${DIST_DIR}/${ZIP_NAME}"
+fi
