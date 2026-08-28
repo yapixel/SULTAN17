@@ -338,6 +338,7 @@ fi
 if ! grep -q "^CONFIG_KSU_SUSFS_SUS_SU=n$" "$DEFCONFIG"; then
         echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$DEFCONFIG"
 fi
+
 if ! grep -q "^CONFIG_KSU_SUSFS=y$" "$DEFCONFIG"; then
         echo "CONFIG_KSU_SUSFS=y" >> "$DEFCONFIG"
 fi
@@ -345,6 +346,7 @@ fi
 #nomount
 if ! grep -q "^CONFIG_NOMOUNT=y$" "$DEFCONFIG"; then
         echo "CONFIG_NOMOUNT=y" >> "$DEFCONFIG"
+fi
 
 if [[ "$VARIANT" == *"-vpnhide" ]]; then
                 if ! grep -q "^CONFIG_VPNHIDE=y$" "$DEFCONFIG"; then
