@@ -34,12 +34,12 @@ case "$1" in
 esac
 
 case "$2" in
-    ksu-susfs|ksu-susfs-nomount|ksu-next-susfs|ksu-next-susfs-nomount)
+    ksu-susfs|ksu-susfs-vpnhide|ksu-next-susfs|ksu-next-susfs-vpnhide)
         VARIANT="$2"
         ;;
     *)
         echo "Error: '$2' is not a valid variant."
-        echo "Usage: $0 <gs201|zuma|zumapro> <ksu-susfs|ksu-susfs-nomount|ksu-next-susfs|ksu-next-susfs-nomount"
+        echo "Usage: $0 <gs201|zuma|zumapro> <ksu-susfs|ksu-susfs-vpnhide|ksu-next-susfs|ksu-next-susfs-vpnhide"
         exit 1
         ;;
 esac
@@ -107,6 +107,15 @@ clone_susfs() {
 		--depth=1 \
 		-b "${SUSFS_BRANCH}" \
 		"${SUSFS_REPO}"
+}
+
+clone_vpnhide() {
+        msg "Cloning VPNHide"
+
+        git clone \
+                --depth=1 \
+                -b "${VPNHIDE_BRANCH}" \
+                "${VPNHIDE_REPO}"
 }
 
 install_ksu() {
@@ -262,6 +271,11 @@ patch_nomount() {
                 "$KERNEL_REPO/sultan_patches/sultan/nomount-sultan-proc-hook.patch"
 }
 
+patch_vpnhide() {
+	msg "Applying VPNHide"
+	bash "$KERNEL_REPO/vpnhide_backend/kpatch/scripts/apply.sh "$KERNEL_REPO/" "android14-6.1"
+}
+
 ######################################################
 
 #clone kernel_patches
@@ -275,15 +289,18 @@ case "$VARIANT" in
 	patch_utf8
 	patch_susfs_ksu
 	patch_sultan
+	clone_nomount
 	msg "$TARGET $VARIANT done"
         ;;
-	ksu-susfs-nomount)
+	ksu-susfs-vpnhide)
 	install_ksu
 	clone_susfs
 	patch_utf8
 	patch_susfs_ksu
 	patch_sultan
 	clone_nomount
+	clone_vpnhide
+	patch_vpnhide
 	msg "$TARGET $VARIANT done"
 		;;
     ksu-next-susfs)
@@ -292,15 +309,18 @@ case "$VARIANT" in
 	patch_utf8
 	patch_susfs_ksu_next
 	patch_sultan
+	clone_nomount
 	echo "$TARGET $VARIANT done"
         ;;
-	ksu-next-susfs-nomount)
+	ksu-next-susfs-vpnhide)
 	install_ksu_next
 	clone_susfs
 	patch_utf8
 	patch_susfs_ksu_next
 	patch_sultan
 	clone_nomount
+	clone_vpnhide
+	patch_vpnhide
 	echo "$TARGET $VARIANT done"
         ;;
 esac
@@ -322,9 +342,13 @@ if ! grep -q "^CONFIG_KSU_SUSFS=y$" "$DEFCONFIG"; then
         echo "CONFIG_KSU_SUSFS=y" >> "$DEFCONFIG"
 fi
 
-if [[ "$VARIANT" == *"-nomount" ]]; then
-                if ! grep -q "^CONFIG_NOMOUNT=y$" "$DEFCONFIG"; then
-                        echo "CONFIG_NOMOUNT=y" >> "$DEFCONFIG"
+#nomount
+if ! grep -q "^CONFIG_NOMOUNT=y$" "$DEFCONFIG"; then
+        echo "CONFIG_NOMOUNT=y" >> "$DEFCONFIG"
+
+if [[ "$VARIANT" == *"-vpnhide" ]]; then
+                if ! grep -q "^CONFIG_VPNHIDE=y$" "$DEFCONFIG"; then
+                        echo "CONFIG_VPNHIDE=y" >> "$DEFCONFIG"
                 fi
 fi
 
