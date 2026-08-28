@@ -273,7 +273,7 @@ patch_nomount() {
 
 patch_vpnhide() {
 	msg "Applying VPNHide"
-	bash "$KERNEL_REPO/vpnhide_backend/kpatch/scripts/apply.sh "$KERNEL_REPO/" "android14-6.1"
+	bash "$KERNEL_REPO/vpnhide_backend/kpatch/scripts/apply.sh" "$KERNEL_REPO/" "android14-6.1"
 }
 
 ######################################################
