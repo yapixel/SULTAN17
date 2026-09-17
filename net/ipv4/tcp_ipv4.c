@@ -78,6 +78,7 @@
 #include <linux/inetdevice.h>
 #include <linux/btf_ids.h>
 
+#include <crypto/algapi.h>
 #include <crypto/hash.h>
 #include <linux/scatterlist.h>
 
@@ -776,7 +777,7 @@ static void tcp_v4_send_reset(const struct sock *sk, struct sk_buff *skb)
 
 
 		genhash = tcp_v4_md5_hash_skb(newhash, key, NULL, skb);
-		if (genhash || memcmp(hash_location, newhash, 16) != 0)
+		if (genhash || crypto_memneq(hash_location, newhash, 16))
 			goto out;
 
 	}
@@ -3155,8 +3156,6 @@ fallback:
 
 static int __net_init tcp_sk_init(struct net *net)
 {
-	struct tcp_plb_net_context *ctx, *init_ctx;
-
 	net->ipv4.sysctl_tcp_ecn = 2;
 	net->ipv4.sysctl_tcp_ecn_fallback = 1;
 
@@ -3230,18 +3229,6 @@ static int __net_init tcp_sk_init(struct net *net)
 	net->ipv4.sysctl_tcp_fastopen = TFO_CLIENT_ENABLE;
 	net->ipv4.sysctl_tcp_fastopen_blackhole_timeout = 0;
 	atomic_set(&net->ipv4.tfo_active_disable_times, 0);
-
-	ctx = tcp_get_plb_ctx(net);
-	init_ctx = tcp_get_plb_ctx(&init_net);
-
-	if (ctx && init_ctx && !net_eq(net, &init_net))
-	{
-		ctx->params.sysctl_tcp_plb_enabled = init_ctx->params.sysctl_tcp_plb_enabled; 
-		ctx->params.sysctl_tcp_plb_idle_rehash_rounds = init_ctx->params.sysctl_tcp_plb_idle_rehash_rounds; 
-		ctx->params.sysctl_tcp_plb_rehash_rounds = init_ctx->params.sysctl_tcp_plb_rehash_rounds; 
-		ctx->params.sysctl_tcp_plb_suspend_rto_sec = init_ctx->params.sysctl_tcp_plb_suspend_rto_sec; 
-		ctx->params.sysctl_tcp_plb_cong_thresh = init_ctx->params.sysctl_tcp_plb_cong_thresh; 
-	}
 
 	/* Reno is always built in */
 	if (!net_eq(net, &init_net) &&

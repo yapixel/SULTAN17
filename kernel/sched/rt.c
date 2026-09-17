@@ -2329,6 +2329,7 @@ static void push_rt_tasks(struct rq *rq)
  */
 static int rto_next_cpu(struct root_domain *rd)
 {
+	int this_cpu = smp_processor_id();
 	int next;
 	int cpu;
 
@@ -2355,11 +2356,12 @@ static int rto_next_cpu(struct root_domain *rd)
 
 		rd->rto_cpu = cpu;
 
-		if (cpu < nr_cpu_ids) {
-			if (!has_pushable_tasks(cpu_rq(cpu)))
-				continue;
+		/* Do not send IPI to self */
+		if (cpu == this_cpu)
+			continue;
+
+		if (cpu < nr_cpu_ids)
 			return cpu;
-		}
 
 		rd->rto_cpu = -1;
 
@@ -2795,7 +2797,6 @@ static unsigned int get_rr_interval_rt(struct rq *rq, struct task_struct *task)
 		return 0;
 }
 
-#include "cass_rt.h"
 DEFINE_SCHED_CLASS(rt) = {
 
 	.enqueue_task		= enqueue_task_rt,

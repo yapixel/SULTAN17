@@ -2249,8 +2249,6 @@ struct zap_details {
 /* Set in unmap_vmas() to indicate a final unmap call.  Only used by hugetlb */
 #define  ZAP_FLAG_UNMAP              ((__force zap_flags_t) BIT(1))
 
-void shmem_set_file(struct vm_area_struct *vma, struct file *file);
-
 #ifdef CONFIG_MMU
 extern bool can_do_mlock(void);
 #else
@@ -3905,5 +3903,8 @@ madvise_set_anon_name(struct mm_struct *mm, unsigned long start,
 	return 0;
 }
 #endif
+
+void prep_new_page(struct page *page, unsigned int order, gfp_t gfp_flags,
+							unsigned int alloc_flags);
 
 #endif /* _LINUX_MM_H */
