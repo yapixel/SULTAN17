@@ -101,6 +101,78 @@ enum bbr_ack_phase {
 	BBR_ACKS_PROBE_STOPPING,  /* stopped probing; still getting feedback */
 };
 
+/* BBR3 congestion control block */
+struct bbr3 {
+	u32	min_rtt_us;	        /* min RTT in min_rtt_win_sec window */
+	u32	min_rtt_stamp;	        /* timestamp of min_rtt_us */
+	u32	probe_rtt_done_stamp;   /* end time for BBR_PROBE_RTT mode */
+	u32	probe_rtt_min_us;	/* min RTT in probe_rtt_win_ms win */
+	u32	probe_rtt_min_stamp;	/* timestamp of probe_rtt_min_us*/
+	u32     next_rtt_delivered; /* scb->tx.delivered at end of round */
+	u64	cycle_mstamp;	     /* time of this cycle phase start */
+	u32     mode:2,		     /* current bbr_mode in state machine */
+		prev_ca_state:3,     /* CA state on previous ACK */
+		round_start:1,	     /* start of packet-timed tx->ack round? */
+		ce_state:1,          /* If most recent data has CE bit set */
+		bw_probe_up_rounds:5,   /* cwnd-limited rounds in PROBE_UP */
+		try_fast_path:1,	/* can we take fast path? */
+		idle_restart:1,	     /* restarting after idle? */
+		probe_rtt_round_done:1,  /* a BBR_PROBE_RTT round at 4 pkts? */
+		init_cwnd:7,         /* initial cwnd */
+		unused_1:10;
+	u32	pacing_gain:10,	/* current gain for setting pacing rate */
+		cwnd_gain:10,	/* current gain for setting cwnd */
+		full_bw_reached:1,   /* reached full bw in Startup? */
+		full_bw_cnt:2,	/* number of rounds without large bw gains */
+		cycle_idx:2,	/* current index in pacing_gain cycle array */
+		has_seen_rtt:1, /* have we seen an RTT sample yet? */
+		unused_2:6;
+	u32	prior_cwnd;	/* prior cwnd upon entering loss recovery */
+	u32	full_bw;	/* recent bw, to estimate if pipe is full */
+
+	/* For tracking ACK aggregation: */
+	u64	ack_epoch_mstamp;	/* start of ACK sampling epoch */
+	u16	extra_acked[2];		/* max excess data ACKed in epoch */
+	u32	ack_epoch_acked:20,	/* packets (S)ACKed in sampling epoch */
+		extra_acked_win_rtts:5,	/* age of extra_acked, in round trips */
+		extra_acked_win_idx:1,	/* current index in extra_acked array */
+	/* BBR v3 state: */
+		full_bw_now:1,		/* recently reached full bw plateau? */
+		startup_ecn_rounds:2,	/* consecutive hi ECN STARTUP rounds */
+		loss_in_cycle:1,	/* packet loss in this cycle? */
+		ecn_in_cycle:1,		/* ECN in this cycle? */
+		unused_3:1;
+	u32	loss_round_delivered; /* scb->tx.delivered ending loss round */
+	u32	undo_bw_lo;	     /* bw_lo before latest losses */
+	u32	undo_inflight_lo;    /* inflight_lo before latest losses */
+	u32	undo_inflight_hi;    /* inflight_hi before latest losses */
+	u32	bw_latest;	 /* max delivered bw in last round trip */
+	u32	bw_lo;		 /* lower bound on sending bandwidth */
+	u32	bw_hi[2];	 /* max recent measured bw sample */
+	u32	inflight_latest; /* max delivered data in last round trip */
+	u32	inflight_lo;	 /* lower bound of inflight data range */
+	u32	inflight_hi;	 /* upper bound of inflight data range */
+	u32	bw_probe_up_cnt; /* packets delivered per inflight_hi incr */
+	u32	bw_probe_up_acks;  /* packets (S)ACKed since inflight_hi incr */
+	u32	probe_wait_us;	 /* PROBE_DOWN until next clock-driven probe */
+	u32	prior_rcv_nxt;	/* tp->rcv_nxt when CE state last changed */
+	u32	ecn_eligible:1,	/* sender can use ECN (RTT, handshake)? */
+		ecn_alpha:9,	/* EWMA delivered_ce/delivered; 0..256 */
+		bw_probe_samples:1,    /* rate samples reflect bw probing? */
+		prev_probe_too_high:1, /* did last PROBE_UP go too high? */
+		stopped_risky_probe:1, /* last PROBE_UP stopped due to risk? */
+		rounds_since_probe:8,  /* packet-timed rounds since probed bw */
+		loss_round_start:1,    /* loss_round_delivered round trip? */
+		loss_in_round:1,       /* loss marked in this round trip? */
+		ecn_in_round:1,	       /* ECN marked in this round trip? */
+		ack_phase:3,	       /* bbr_ack_phase: meaning of ACKs */
+		loss_events_in_round:4,/* losses in STARTUP round */
+		initialized:1,	       /* has bbr_init() been called? */
+		unused_4:11;
+	u32	alpha_last_delivered;	 /* tp->delivered    at alpha update */
+	u32	alpha_last_delivered_ce; /* tp->delivered_ce at alpha update */
+};
+
 struct bbr_context {
 	u32 sample_bw;
 };
@@ -287,8 +359,7 @@ static void bbr3_skb_marked_lost(struct sock *sk, const struct sk_buff *skb);
 
 static inline struct bbr3 *bbr3_get_priv(const struct sock *sk)
 {
-	/* Read the address value out of slot 0 of the 104-byte array space */
-	return *(struct bbr3 **)inet_csk_ca(sk);
+	return (struct bbr3 *)inet_csk_ca(sk);
 }
 
 /* This connection can use ECN if both endpoints have signaled ECN support in
@@ -1006,14 +1077,10 @@ static void bbr_check_ecn_too_high_in_startup(struct sock *sk, u32 ce_ratio)
 static int bbr_update_ecn_alpha(struct sock *sk)
 {
 	struct tcp_sock *tp = tcp_sk(sk);
-	struct net *net = sock_net(sk);
 	struct bbr3 *bbr = bbr3_get_priv(sk);
-	struct tcp_plb_net_context *ctx;
-	bool plb_enabled = false;
 	s32 delivered, delivered_ce;
 	u64 alpha, ce_ratio;
 	u32 gain;
-	bool want_ecn_alpha;
 
 	/* See if we should use ECN sender logic for this connection. */
 	if (!bbr->ecn_eligible && bbr_can_use_ecn(sk) &&
@@ -1022,14 +1089,8 @@ static int bbr_update_ecn_alpha(struct sock *sk)
 	     !bbr_ecn_max_rtt_us))
 		bbr->ecn_eligible = 1;
 
-	ctx = tcp_get_plb_ctx(net);
-	plb_enabled = !ctx ? false : !!READ_ONCE(ctx->params.sysctl_tcp_plb_enabled);
-
-	/* Skip updating alpha only if not ECN-eligible and PLB is disabled. */
-	want_ecn_alpha = (bbr->ecn_eligible ||
-			  (bbr_can_use_ecn(sk) &&
-			   plb_enabled));
-	if (!want_ecn_alpha)
+	/* Skip updating alpha if not ECN-eligible. */
+	if (!bbr->ecn_eligible)
 		return -1;
 
 	delivered = tp->delivered - bbr->alpha_last_delivered;
@@ -1039,7 +1100,6 @@ static int bbr_update_ecn_alpha(struct sock *sk)
 	    WARN_ON_ONCE(delivered < 0 || delivered_ce < 0))  /* backwards? */
 		return -1;
 
-	BUILD_BUG_ON(BBR_SCALE != TCP_PLB_SCALE);
 	ce_ratio = (u64)delivered_ce << BBR_SCALE;
 	do_div(ce_ratio, delivered);
 
@@ -1053,19 +1113,6 @@ static int bbr_update_ecn_alpha(struct sock *sk)
 
 	bbr_check_ecn_too_high_in_startup(sk, ce_ratio);
 	return (int)ce_ratio;
-}
-
-/* Protective Load Balancing (PLB). PLB rehashes outgoing data (to a new IPv6
- * flow label) if it encounters sustained congestion in the form of ECN marks.
- */
-static void bbr_plb(struct sock *sk, const struct rate_sample *rs, int ce_ratio)
-{
-	struct bbr3 *bbr = bbr3_get_priv(sk);
-
-	if (bbr->round_start && ce_ratio >= 0)
-		tcp_plb_update_state(sk, &bbr->plb, ce_ratio);
-
-	tcp_plb_check_rehash(sk, &bbr->plb);
 }
 
 /* Each round trip of BBR_BW_PROBE_UP, double volume of probing data. */
@@ -1993,7 +2040,6 @@ static void bbr3_main(struct sock *sk, const struct rate_sample *rs)
 			min_t(s32, bbr->rounds_since_probe + 1, 0xFF);
 		ce_ratio = bbr_update_ecn_alpha(sk);
 	}
-	bbr_plb(sk, rs, ce_ratio);
 
 	bbr->ecn_in_round  |= (bbr->ecn_eligible && rs->is_ece);
 	bbr_calculate_bw_sample(sk, rs, &ctx);
@@ -2022,19 +2068,10 @@ out:
 static void bbr3_init(struct sock *sk)
 {
 	struct tcp_sock *tp = tcp_sk(sk);
-	struct bbr3 **bbr3_ptr = (struct bbr3 **)inet_csk_ca(sk);
-	struct bbr3 *bbr;
-
-	bbr = kmalloc(sizeof(struct bbr3), GFP_ATOMIC);
-	if (unlikely(!bbr))
-		return;
+	struct bbr3 *bbr = bbr3_get_priv(sk);
 
 	memset(bbr, 0, sizeof(struct bbr3));
 
-	*bbr3_ptr = bbr;
-
-	bbr->skb_marked_lost = bbr3_skb_marked_lost;
-	
 	bbr->initialized = 1;
 
 	bbr->init_cwnd = min(0x7FU, tcp_snd_cwnd(tp));
@@ -2104,22 +2141,11 @@ static void bbr3_init(struct sock *sk)
 	bbr->ecn_alpha = bbr_param(sk, ecn_alpha_init);
 	bbr->alpha_last_delivered = 0;
 	bbr->alpha_last_delivered_ce = 0;
-	bbr->plb.pause_until = 0;
 
 	tp->fast_ack_mode = bbr_fast_ack_mode ? 1 : 0;
 
 	if (bbr_can_use_ecn(sk))
 		tp->ecn_flags |= TCP_ECN_ECT_PERMANENT;
-}
-
-__used noinline static void bbr3_release(struct sock *sk)
-{
-	struct bbr3 **bbr3_ptr = (struct bbr3 **)inet_csk_ca(sk);
-
-	if (*bbr3_ptr) {
-		kfree(*bbr3_ptr);
-		*bbr3_ptr = NULL;
-	}
 }
 
 /* BBR marks the current round trip as a loss round. */
@@ -2300,7 +2326,6 @@ static void bbr3_set_state(struct sock *sk, u8 new_state)
 	if (new_state == TCP_CA_Loss) {
 
 		bbr->prev_ca_state = TCP_CA_Loss;
-		tcp_plb_update_state_upon_rto(sk, &bbr->plb);
 		/* The tcp_write_timeout() call to sk_rethink_txhash() likely
 		 * repathed this flow, so re-learn the min network RTT on the
 		 * new path:
@@ -2325,19 +2350,20 @@ static struct tcp_congestion_ops tcp_bbr_cong_ops __read_mostly = {
 	.name		= "bbr3",
 	.owner		= THIS_MODULE,
 	.init		= bbr3_init,
-	.release	= bbr3_release,
 	.cong_control	= bbr3_main,
 	.sndbuf_expand	= bbr3_sndbuf_expand,
 	.undo_cwnd	= bbr3_undo_cwnd,
 	.cwnd_event	= bbr3_cwnd_event,
 	.ssthresh	= bbr3_ssthresh,
-	.min_tso_segs = bbr3_tso_segs,
+	.min_tso_segs	= bbr3_tso_segs,
+	.skb_marked_lost = bbr3_skb_marked_lost,
 	.get_info	= bbr3_get_info,
 	.set_state	= bbr3_set_state,
 };
 
 static int __init bbr3_register(void)
 {
+	BUILD_BUG_ON(sizeof(struct bbr3) > ICSK_CA_PRIV_SIZE);
 	return tcp_register_congestion_control(&tcp_bbr_cong_ops);
 }
 
